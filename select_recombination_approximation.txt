@@ -1,0 +1,573 @@
+  #The following would go in thermodynamics_ionization_fractions. 
+  ###########################################
+  /** - --> first regime: H and Helium fully ionized */
+  if (current_ap == ptdw->index_ap_brec) {
+
+    /* This is equivalent to the formula for HeIII --> HeII in Saha, just using rhs' = 1/rhs */
+    rhs = ptw->SIunit_nH0/exp( 1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeII/Tmat );
+    if (pth->has_varconst == _TRUE_) {
+      rhs /= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow(1.-rhs*(1.+ptw->fHe),2) + 4.*rhs*(1.+2*ptw->fHe));
+
+    x = 2.*(1+2.*ptw->fHe)/(1.-rhs*(1.+ptw->fHe) + sqrt_val);
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = 1.;
+    /* BEGIN #TWIN SECTOR */
+    /* This is equivalent to the formula for twin HeIII --> HeII in Saha, just using rhs' = 1/rhs */
+    rhs_twin = ptw->SIunit_nH0_twin/exp( 1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeII_twin/Tmat_twin );
+    if (pth->has_varconst == _TRUE_) {
+      rhs_twin /= rescale_rhs_twin;
+    }
+
+    sqrt_val_twin = sqrt(pow(1.-rhs_twin*(1.+ptw->fHe_twin),2) + 4.*rhs_twin*(1.+2*ptw->fHe_twin));
+
+    x_twin = 2.*(1+2.*ptw->fHe_twin)/(1.-rhs_twin*(1.+ptw->fHe_twin) + sqrt_val_twin);
+
+    ptdw->x_H_twin = 1.;
+    ptdw->x_He_twin = 1.;
+    /* END TWIN SECTOR */
+
+  }
+  /* BEGIN #TWIN SECTOR */
+  else if (current_ap == ptdw->index_ap_He1_twin) {
+  
+    /* This is equivalent to the formula for HeIII --> HeII in Saha, just using rhs' = 1/rhs */
+    rhs = ptw->SIunit_nH0/exp( 1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeII/Tmat );
+    if (pth->has_varconst == _TRUE_) {
+      rhs /= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow(1.-rhs*(1.+ptw->fHe),2) + 4.*rhs*(1.+2*ptw->fHe));
+
+    x = 2.*(1+2.*ptw->fHe)/(1.-rhs*(1.+ptw->fHe) + sqrt_val);
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = 1.;
+    
+    /* Assuming Saha equilibrium for twin HeIII --> HeII */
+    rhs_twin = exp( 1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeII_twin/Tmat_twin ) / ptw->SIunit_nH0_twin;
+    if (pth->has_varconst == _TRUE_) {
+      rhs_twin *= rescale_rhs;
+    }
+
+    sqrt_val_twin = sqrt(pow((rhs_twin-1.-ptw->fHe_twin),2) + 4.*(1.+2.*ptw->fHe_twin)*rhs_twin);
+
+    x_twin = 0.5*(sqrt_val_twin - (rhs_twin-1.-ptw->fHe_twin));
+    
+    ptdw->x_H_twin = 1.;
+    ptdw->x_He_twin = 1.;
+
+  }
+  
+  
+  /* END TWIN SECTOR */
+
+  /* BEGIN #TWIN SECTOR */
+  else if (current_ap == ptdw->index_ap_He1f_twin) {
+  
+
+    /* This is equivalent to the formula for HeIII --> HeII in Saha, just using rhs' = 1/rhs */
+    rhs = ptw->SIunit_nH0/exp( 1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeII/Tmat );
+    if (pth->has_varconst == _TRUE_) {
+      rhs /= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow(1.-rhs*(1.+ptw->fHe),2) + 4.*rhs*(1.+2*ptw->fHe));
+
+    x = 2.*(1+2.*ptw->fHe)/(1.-rhs*(1.+ptw->fHe) + sqrt_val);
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = 1.;
+    
+    /* Assuming Saha equilibrium for HeII --> HeI with HII fully ionized, again expanding in rhs' = 1/rhs compared to below */
+
+    rhs_twin = 0.25*ptw->SIunit_nH0_twin/exp( 1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeI_twin/Tmat_twin );
+    if (pth->has_varconst == _TRUE_) {
+      rhs_Twin /= rescale_rhs;
+    }
+
+    sqrt_val_twin = sqrt(pow(1.-rhs_twin,2) + 4.*rhs_twin*(1.+ptw->fHe_twin));
+
+    x_twin = 2.*(1+ptw->fHe_twin)/(1.-rhs_twin + sqrt_val_twin);
+
+    ptdw->x_H_twin = 1.;
+    ptdw->x_He_twin = 1.;
+
+
+  }
+  
+  
+  /* END TWIN SECTOR */
+
+  /* BEGIN #TWIN SECTOR */
+  else if (current_ap == ptdw->index_ap_He2_twin) {
+  
+
+    /* This is equivalent to the formula for HeIII --> HeII in Saha, just using rhs' = 1/rhs */
+    rhs = ptw->SIunit_nH0/exp( 1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeII/Tmat );
+    if (pth->has_varconst == _TRUE_) {
+      rhs /= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow(1.-rhs*(1.+ptw->fHe),2) + 4.*rhs*(1.+2*ptw->fHe));
+
+    x = 2.*(1+2.*ptw->fHe)/(1.-rhs*(1.+ptw->fHe) + sqrt_val);
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = 1.;
+    
+    /* Assuming Saha equilibrium for HeII --> HeI with HII fully ionized */
+    rhs_twin = 4.*exp(1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeI_twin/Tmat_twin ) / ptw->SIunit_nH0_twin;
+    if (pth->has_varconst == _TRUE_) {
+      rhs_twin *= rescale_rhs;
+    }
+
+    sqrt_val_twin = sqrt(pow((rhs_twin-1.),2) + 4.*(1.+ptw->fHe_twin)*rhs_twin );
+
+    x_twin = 0.5*(sqrt_val_twin - (rhs_twin-1.));
+
+    ptdw->x_H_twin = 1.;
+    ptdw->x_He_twin = (x_twin-1.)/ptw->fHe_twin;
+
+
+  }
+  
+  
+  /* END TWIN SECTOR */
+
+
+  /* BEGIN #TWIN SECTOR */
+  else if (current_ap == ptdw->index_ap_H_twin) {
+  
+
+    /* This is equivalent to the formula for HeIII --> HeII in Saha, just using rhs' = 1/rhs */
+    rhs = ptw->SIunit_nH0/exp( 1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeII/Tmat );
+    if (pth->has_varconst == _TRUE_) {
+      rhs /= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow(1.-rhs*(1.+ptw->fHe),2) + 4.*rhs*(1.+2*ptw->fHe));
+
+    x = 2.*(1+2.*ptw->fHe)/(1.-rhs*(1.+ptw->fHe) + sqrt_val);
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = 1.;
+    
+    
+    rhs_twin = exp(1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_H_twin/Tmat_twin)/ptw->SIunit_nH0_twin;
+    if (pth->has_varconst == _TRUE_) {
+      rhs_twin *= rescale_rhs;
+    }
+
+    /* Assuming Saha equilibrium for HII->HI. Includes xHeII corrections from incomplete recombination of HeII --> HeI (non-zero x_HeII) */
+    xHeII_twin = y[ptv->index_ti_x_He_twin]*ptw->fHe_twin;
+    x_H_twin = 2./(1.+xHeII_twin/rhs_twin + sqrt((1.+xHeII_twin/rhs_twin)*(1.+xHeII_twin/rhs_twin)+4./rhs_twin));
+
+    x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+
+    ptdw->x_H_twin = x_H_twin;
+    ptdw->x_He_twin = x_He_twin;
+
+
+  }
+  
+  
+  /* END TWIN SECTOR */
+
+ /* BEGIN #TWIN SECTOR */
+  else if (current_ap == ptdw->index_ap_Hf_twin) {
+  
+
+    /* This is equivalent to the formula for HeIII --> HeII in Saha, just using rhs' = 1/rhs */
+    rhs = ptw->SIunit_nH0/exp( 1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeII/Tmat );
+    if (pth->has_varconst == _TRUE_) {
+      rhs /= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow(1.-rhs*(1.+ptw->fHe),2) + 4.*rhs*(1.+2*ptw->fHe));
+
+    x = 2.*(1+2.*ptw->fHe)/(1.-rhs*(1.+ptw->fHe) + sqrt_val);
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = 1.;
+    
+    x_H_twin = y[ptv->index_ti_x_H_twin];
+    x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+
+    ptdw->x_H_twin = x_H_twin;
+    ptdw->x_He_twin = x_He_twin;    
+
+
+  }
+  
+  
+  /* END TWIN SECTOR */
+
+  /** - --> second regime: first Helium recombination (analytic approximation) */
+  else if (current_ap == ptdw->index_ap_He1) {
+
+    /* Assuming Saha equilibrium for HeIII --> HeII */
+    rhs = exp( 1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeII/Tmat ) / ptw->SIunit_nH0;
+    if (pth->has_varconst == _TRUE_) {
+      rhs *= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow((rhs-1.-ptw->fHe),2) + 4.*(1.+2.*ptw->fHe)*rhs);
+
+    x = 0.5*(sqrt_val - (rhs-1.-ptw->fHe));
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = 1.;
+
+    /* BEGIN #TWIN SECTOR */
+    x_H_twin = y[ptv->index_ti_x_H_twin];
+    x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+
+    ptdw->x_H_twin = x_H_twin;
+    ptdw->x_He_twin = x_He_twin;    
+    /* END TWIN SECTOR */
+
+  }
+  /** - --> third regime: first Helium recombination finished, H and Helium fully ionized */
+  else if (current_ap == ptdw->index_ap_He1f) {
+
+    /* Assuming Saha equilibrium for HeII --> HeI with HII fully ionized, again expanding in rhs' = 1/rhs compared to below */
+    rhs = 0.25*ptw->SIunit_nH0/exp( 1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeI/Tmat );
+    if (pth->has_varconst == _TRUE_) {
+      rhs /= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow(1.-rhs,2) + 4.*rhs*(1.+ptw->fHe));
+
+    x = 2.*(1+ptw->fHe)/(1.-rhs + sqrt_val);
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = 1.;
+
+    /* BEGIN #TWIN SECTOR */
+    x_H_twin = y[ptv->index_ti_x_H_twin];
+    x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+
+    ptdw->x_H_twin = x_H_twin;
+    ptdw->x_He_twin = x_He_twin;    
+    /* END TWIN SECTOR */
+  }
+  /** - --> fourth regime: second Helium recombination starts (analytic approximation) */
+  else if (current_ap == ptdw->index_ap_He2) {
+
+    /* Assuming Saha equilibrium for HeII --> HeI with HII fully ionized */
+    rhs = 4.*exp(1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_HeI/Tmat ) / ptw->SIunit_nH0;
+    if (pth->has_varconst == _TRUE_) {
+      rhs *= rescale_rhs;
+    }
+
+    sqrt_val = sqrt(pow((rhs-1.),2) + 4.*(1.+ptw->fHe)*rhs );
+
+    x = 0.5*(sqrt_val - (rhs-1.));
+
+    ptdw->x_H = 1.;
+    ptdw->x_He = (x-1.)/ptw->fHe;
+
+    /* BEGIN #TWIN SECTOR */
+    x_H_twin = y[ptv->index_ti_x_H_twin];
+    x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+
+    ptdw->x_H_twin = x_H_twin;
+    ptdw->x_He_twin = x_He_twin;    
+    /* END TWIN SECTOR */
+  }
+  /** - --> fifth regime: Hydrogen recombination starts (analytic approximation)
+      while Helium recombination continues (full equation) */
+  else if (current_ap == ptdw->index_ap_H) {
+
+    rhs = exp(1.5*log(ptw->const_NR_numberdens*Tmat/(1.+z)/(1.+z)) - ptw->const_Tion_H/Tmat)/ptw->SIunit_nH0;
+    if (pth->has_varconst == _TRUE_) {
+      rhs *= rescale_rhs;
+    }
+
+    /* Assuming Saha equilibrium for HII->HI. Includes xHeII corrections from incomplete recombination of HeII --> HeI (non-zero x_HeII) */
+    xHeII = y[ptv->index_ti_x_He]*ptw->fHe;
+    x_H = 2./(1.+xHeII/rhs + sqrt((1.+xHeII/rhs)*(1.+xHeII/rhs)+4./rhs));
+
+    x_He = y[ptv->index_ti_x_He];
+    x = x_H + ptw->fHe * x_He;
+
+    ptdw->x_H = x_H;
+    ptdw->x_He = x_He;
+
+    /* BEGIN #TWIN SECTOR */
+    x_H_twin = y[ptv->index_ti_x_H_twin];
+    x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+
+    ptdw->x_H_twin = x_H_twin;
+    ptdw->x_He_twin = x_He_twin;    
+    /* END TWIN SECTOR */
+  }
+  /** - --> sixth regime: full Hydrogen and Helium equations */
+  else if (current_ap == ptdw->index_ap_frec) {
+    x_H = y[ptv->index_ti_x_H];
+    x_He = y[ptv->index_ti_x_He];
+    x = x_H + ptw->fHe * x_He;
+
+    ptdw->x_H = x_H;
+    ptdw->x_He = x_He;
+
+    /* BEGIN #TWIN SECTOR */
+    x_H_twin = y[ptv->index_ti_x_H_twin];
+    x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+
+    ptdw->x_H_twin = x_H_twin;
+    ptdw->x_He_twin = x_He_twin;    
+    /* END TWIN SECTOR */
+  }
+  /** - --> seventh regime: calculate x_noreio during reionization
+      (i.e. x before taking reionisation into account) */
+  else if (current_ap == ptdw->index_ap_reio) {
+
+    x_H = y[ptv->index_ti_x_H];
+    x_He = y[ptv->index_ti_x_He];
+    x = x_H + ptw->fHe * x_He;
+
+    ptdw->x_H = x_H;
+    ptdw->x_He = x_He;
+
+    /* BEGIN #TWIN SECTOR */
+    x_H_twin = y[ptv->index_ti_x_H_twin];
+    x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+
+    ptdw->x_H_twin = x_H_twin;
+    ptdw->x_He_twin = x_He_twin;    
+    /* END TWIN SECTOR */
+  }
+
+  ptdw->x_noreio = x;
+  ptdw->x_noreio_twin = x_twin;
+
+  /** - If z is during reionization, also calculate the reionized x */
+  if (current_ap == ptdw->index_ap_reio) {
+
+    /* set x from the evolver (which is very low ~10^-4) as 'xe_before' */
+    ptw->ptrp->reionization_parameters[ptw->ptrp->index_re_xe_before] = x;
+
+    /* compute x */
+    class_call(thermodynamics_reionization_function(z,pth,ptw->ptrp,&x),
+               pth->error_message,
+               pth->error_message);
+  }
+  
+ 
+############################################################
+
+#The following would go in thermodynamics_vector_init
+
+###########################################################
+
+  else if (ptdw->ap_current == ptdw->index_ap_He1_twin) {
+  }  
+  
+  else if (ptdw->ap_current == ptdw->index_ap_He1f_twin) {
+  }
+  else if (ptdw->ap_current == ptdw->index_ap_He2_twin) {
+  }
+  
+  else if (ptdw->ap_current == ptdw->index_ap_H_twin) {
+    class_define_index(ptv->index_ti_x_He_twin,_TRUE_,index_ti,1);
+  }
+  
+  else if (ptdw->ap_current == ptdw->index_ap_Hf_twin) {
+    class_define_index(ptv->index_ti_x_He_twin,_TRUE_,index_ti,1);    
+    class_define_index(ptv->index_ti_x_H_twin,_TRUE_,index_ti,1);
+  }
+  
+  
+  
+  
+  
+  /* BEGIN #TWIN SECTOR */
+  /* Added elseifs for twin hydrogen recombination, when twin helium and twin hydrogen need to start being evolved non-analytically. */
+
+  else if (ptdw->ap_current == ptdw->index_ap_He1_twin){
+    /* Store Tmat in workspace for later use */
+    ptdw->Tmat = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat] + ptw->Tcmb*(1.+z);
+    
+    /* BEGIN #TWIN SECTOR */
+    ptdw->Tmat_twin = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin] + ptw->Tnow_twin*(1.+z);
+    /*END TWIN SECTOR */
+    
+    /* BEGIN #TWIN SECTOR */
+    ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin]; 
+    /* END TWIN SECTOR */
+
+    /* Set the new vector and its indices */
+    ptv->y[ptv->index_ti_D_Tmat] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat];
+
+    /* Free the old vector and its indices */
+    class_call(thermodynamics_vector_free(ptdw->ptv),
+               pth->error_message,
+               pth->error_message);
+
+    /* Copy the new vector into the position of the old one*/
+    ptdw->ptv = ptv;
+
+    ptdw->require_H = _FALSE_;
+    ptdw->require_He = _FALSE_;
+    
+    /* BEGIN #TWIN SECTOR */
+    ptdw->require_He_twin = _FALSE_;
+    ptdw->require_H_twin = _FALSE_;
+    /*END TWIN SECTOR */
+  }
+
+  else if (ptdw->ap_current == ptdw->index_ap_He1f_twin) {
+    /* Store Tmat in workspace for later use */
+    ptdw->Tmat = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat] + ptw->Tcmb*(1.+z);
+    
+    /* BEGIN #TWIN SECTOR */
+    ptdw->Tmat_twin = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin] + ptw->Tnow_twin*(1.+z);
+    /*END TWIN SECTOR */
+    
+    /* BEGIN #TWIN SECTOR */
+    ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin]; 
+    /* END TWIN SECTOR */
+
+    /* Set the new vector and its indices */
+    ptv->y[ptv->index_ti_D_Tmat] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat];
+
+    /* Free the old vector and its indices */
+    class_call(thermodynamics_vector_free(ptdw->ptv),
+               pth->error_message,
+               pth->error_message);
+
+    /* Copy the new vector into the position of the old one*/
+    ptdw->ptv = ptv;
+
+    ptdw->require_H = _FALSE_;
+    ptdw->require_He = _FALSE_;
+    
+    /* BEGIN #TWIN SECTOR */
+    ptdw->require_He_twin = _FALSE_;
+    ptdw->require_H_twin = _FALSE_;
+    /*END TWIN SECTOR */
+  }
+
+  else if (ptdw->ap_current == ptdw->index_ap_He2_twin) {
+    /* Store Tmat in workspace for later use */
+    ptdw->Tmat = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat] + ptw->Tcmb*(1.+z);
+    
+    /* BEGIN #TWIN SECTOR */
+    ptdw->Tmat_twin = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin] + ptw->Tnow_twin*(1.+z);
+    /*END TWIN SECTOR */
+    
+    /* BEGIN #TWIN SECTOR */
+    ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin]; 
+    /* END TWIN SECTOR */
+
+    /* Set the new vector and its indices */
+    ptv->y[ptv->index_ti_D_Tmat] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat];
+
+    /* Free the old vector and its indices */
+    class_call(thermodynamics_vector_free(ptdw->ptv),
+               pth->error_message,
+               pth->error_message);
+
+    /* Copy the new vector into the position of the old one*/
+    ptdw->ptv = ptv;
+
+    ptdw->require_H = _FALSE_;
+    ptdw->require_He = _FALSE_;
+    
+    /* BEGIN #TWIN SECTOR */
+    ptdw->require_He_twin = _FALSE_;
+    ptdw->require_H_twin = _FALSE_;
+    /*END TWIN SECTOR */
+  }
+  else if (ptdw->ap_current == ptdw->index_ap_H_twin) {
+    /* Store Tmat in workspace for later use */
+    ptdw->Tmat = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat] + ptw->Tcmb*(1.+z);
+
+    ptdw->Tmat_twin = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin] + ptw->Tnow_twin*(1.+z);
+ 
+
+    /* Obtain initial contents of new vector analytically, especially x_He */
+    class_call(thermodynamics_ionization_fractions(z,ptdw->ptv->y,pba,pth,ptw,ptdw->ap_current-1),
+               pth->error_message,
+               pth->error_message);
+
+    /* Set the new vector and its indices */
+    ptv->y[ptv->index_ti_D_Tmat] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat];
+    
+    /* BEGIN #TWIN SECTOR */
+    ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin];
+    ptv->y[ptv->index_ti_x_He_twin] = ptdw->x_He_twin; 
+    /* END TWIN SECTOR */
+
+    /* Free the old vector and its indices */
+    class_call(thermodynamics_vector_free(ptdw->ptv),
+               pth->error_message,
+               pth->error_message);
+
+    /* Copy the new vector into the position of the old one*/
+    ptdw->ptv = ptv;
+
+    ptdw->require_H = _FALSE_;
+    ptdw->require_He = _FALSE_;
+    
+    /* BEGIN #TWIN SECTOR */
+    ptdw->require_He_twin = _TRUE_;
+    ptdw->require_H_twin = _FALSE_;
+    /*END TWIN SECTOR */
+  }
+  /* - in the scheme of full twin recombination (=Hf) we evolve all quantities and thus need to set their initial conditions.
+       Tmat and x_He_twin are solely taken from the previous scheme, x_H_twin is set via the analytic function */
+  else if (ptdw->ap_current == ptdw->index_ap_Hf_twin) {
+    /* Store Tmat in workspace for later use */
+    ptdw->Tmat = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat] + ptw->Tcmb*(1.+z);
+    /* BEGIN #TWIN SECTOR */
+    ptdw->Tmat_twin = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin] + ptw->Tnow_twin*(1.+z);
+    /*END TWIN SECTOR */
+    
+    /* Obtain initial contents of new vector analytically, especially x_H_twin */
+    class_call(thermodynamics_ionization_fractions(z,ptdw->ptv->y,pba,pth,ptw,ptdw->ap_current-1),
+               pth->error_message,
+               pth->error_message);
+
+    /* Set the new vector and its indices */
+    ptv->y[ptv->index_ti_D_Tmat] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat];
+
+
+    /* BEGIN #TWIN SECTOR */
+    ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin];
+    ptv->y[ptv->index_ti_x_H_twin] = ptdw->x_H_twin;
+    ptv->y[ptv->index_ti_x_He_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_x_He_twin];
+    /* END TWIN SECTOR */
+
+    /* Free the old vector and its indices */
+    class_call(thermodynamics_vector_free(ptdw->ptv),
+               pth->error_message,
+               pth->error_message);
+
+    /* Copy the new vector into the position of the old one*/
+
+    ptdw->ptv = ptv;
+
+    ptdw->require_H = _FALSE_;
+    ptdw->require_He = _FALSE_;
+    /* BEGIN #TWIN SECTOR */
+    ptdw->require_He_twin = _TRUE_;
+    ptdw->require_H_twin = _TRUE_;
+    /*END TWIN SECTOR */
+  }  
+  
+  /* END TWIN SECTOR */
+  

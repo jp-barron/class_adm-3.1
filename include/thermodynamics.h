@@ -173,6 +173,10 @@ struct thermodynamics
   /** parameters for varying fundamental constants */
 
   short has_varconst; /**< presence of varying fundamental constants? */
+    
+  /* BEGIN #TWIN SECTOR */
+  short has_twin;
+  /* END TWIN SECTOR */
 
   /** START #TWIN SECTOR */
   double YHe_twin;
@@ -406,16 +410,6 @@ struct thermo_diffeq_workspace {
 
   /* index of approximation schemes for the thermal history */
   int index_ap_brec; /**< before all recombination */
-  /* BEGIN #TWIN SECTOR */
-  /* Additional indices of approximation schemes for the thermal history including the dark sector */
-  /*int index_ap_He1_twin;  /**< during 1st twin He-recombination (HeIII) */
-  /*int index_ap_He1f_twin; /**< in between 1st and 2nd twin He recombination */
-  /*int index_ap_He2_twin;  /**< beginning of 2nd twin He-recombination (HeII) */
-  int index_ap_H_twin;    /**< beginning of twin H-recombination (HI) */
-  int index_ap_Hf_twin; /**< during and after full twin H- and twin HeII-recombination, up to beginning of SM helium recombination */
-  /*END TWIN SECTOR */
-
-
   int index_ap_He1;  /**< during 1st He-recombination (HeIII) */
   int index_ap_He1f; /**< in between 1st and 2nd He recombination */
   int index_ap_He2;  /**< beginning of 2nd He-recombination (HeII) */
@@ -426,6 +420,8 @@ struct thermo_diffeq_workspace {
   int ap_current;     /** current approximation scheme index */
   int ap_size;        /**< number of approximation intervals used during evolver loop */
   int ap_size_loaded; /**< number of all approximations  */
+
+
 
   double * ap_z_limits;       /**< vector storing ending limits of each approximation */
   double * ap_z_limits_delta; /**< vector storing smoothing deltas of each approximation */
@@ -442,14 +438,26 @@ struct thermo_diffeq_workspace {
   double x_twin;          /**< total twin ionization fraction following usual CMB convention, n_free_twin/n_H_twin = x_H_twin + fHe_twin * x_He_twin; */
 
   double Tmat_twin;       /**< Twin matter temperature */
-
+  /* Additional indices of approximation schemes for the thermal history including the dark sector */
+  int index_ap_brec_twin;
+  int index_ap_He1_twin;  /**< during 1st twin He-recombination (HeIII) */
+  //int index_ap_He1f_twin; /**< in between 1st and 2nd twin He recombination */
+  int index_ap_He2_twin;  /**< beginning of 2nd twin He-recombination (HeII) */
+  int index_ap_H_twin;    /**< beginning of twin H-recombination (HI) */
+  int index_ap_frec_twin; /**< during and after full twin H- and twin HeII-recombination, up to beginning of SM helium recombination */
+    
+  int ap_current_twin;     /** current approximation scheme index */
+  int ap_size_twin;        /**< number of approximation intervals used during evolver loop */
+  int ap_size_loaded_twin; /**< number of all approximations  */
+  double * ap_z_limits_twin;       /**< vector storing ending limits of each approximation */
+  double * ap_z_limits_delta_twin; /**< vector storing smoothing deltas of each approximation */    
   int require_H_twin;  /** in given approximation scheme, do we need to integrate hydrogen ionization fraction? */
   int require_He_twin; /** in given approximation scheme, do we need to integrate helium ionization fraction? */
-
   /* END TWIN SECTOR */
     
   struct thermo_vector * ptv;       /**< pointer to vector of integrated quantities and their time-derivatives */
   struct thermohyrec * phyrec;     /**< pointer to wrapper of HyRec structure */
+  struct thermohyrec * phyrec_twin; /**< pointer to wrapper of HyRec structure for twin sector */
   struct thermorecfast * precfast; /**< pointer to wrapper of RecFast structure */
 
 };
@@ -515,6 +523,25 @@ struct thermo_workspace {
   double reionization_optical_depth; /**< reionization optical depth inferred from reionization history */
 
   int last_index_back; /**< nearest location in background table */
+    
+  /* BEGIN #TWIN SECTOR */
+  double YHe_twin;
+  double fHe_twin;
+  double SIunit_H0_twin;
+  double SIunit_nH0_twin;
+  double Tnow_twin;
+  /* Most important and useful constants */
+  double const_NR_numberdens_twin;  /**< prefactor in number density of nonrelativistic twin species */
+  double const_Tion_H_twin;         /**< ionization energy for twin HI as temperature */
+  double const_Tion_HeI_twin;       /**< ionization energy for twin HeI as temperature */
+  double const_Tion_HeII_twin;      /**< ionization energy for twin HeII as temperature */
+    
+  double z_H_twin_boltzmann_trigger; /**< Redshift where twin hydrogen should start being evolved with Boltzmann equation **/
+  double z_H_twin_saha_trigger;      /**< Redshift where twin hydrogen should start being evolved with Sahaequation **/
+  double z_He1_twin_trigger;         /**< Redshift where twin HeII->HeI should start being evolved with Saha equation **/
+  //double z_He1f_twin_trigger;
+  double z_He2_twin_trigger;         /**< Redshift where twin HeIII->HeII should start being evolved with Saha equation **/
+  /* END TWIN SECTOR */
 
   struct thermo_diffeq_workspace * ptdw;        /**< pointer to workspace for differential equations */
   struct thermo_reionization_parameters * ptrp; /**< pointer to workspace for reionization */
@@ -601,12 +628,7 @@ extern "C" {
                                                     struct background * pba,
                                                     struct thermodynamics* pth,
                                                     double* pvecback);
-  /** START #TWIN SECTOR */
-  int thermodynamics_calculate_twin_quantities(struct precision * ppr,
-                                               struct background * pba,
-                                               struct thermodynamics * pth,
-                                               double* pvecback);
-  /** END TWIN SECTOR */
+
   int thermodynamics_output_summary(struct background* pba,
                                     struct thermodynamics* pth);
 
@@ -710,21 +732,34 @@ extern "C" {
                    struct background * pba,
                    struct thermodynamics * pth
                    );
-
+  int thermodynamics_sources_twin(double mz,
+                             double * y,
+                             double * dy,
+                             int index_z,
+                             void * thermo_parameters_and_workspace,
+                             ErrorMsg error_message);
+    
+  int thermodynamics_vector_init_twin(struct precision * ppr,
+                                 struct background * pba,
+                                 struct thermodynamics * pth,
+                                 double z,
+                                 struct thermo_workspace * ptw);
+    
   int thermodynamics_derivs_twin(
-                          double z,
-                          double * y_twin,
-                          double * dy_twin,
-                          void * parameters_and_workspace,
-                          ErrorMsg error_message
-                          );
-
-  int thermodynamics_recombination_twin(
-                          struct precision * ppr,
-                          struct background * pba,
-                          struct thermodynamics * pth,
-                          double * pvecback
-                          );
+                              double mz,
+                              double * y,
+                              double * dy,
+                              void * parameters_and_workspace,
+                              ErrorMsg error_message
+                              );
+  int thermodynamics_ionization_fractions_twin(
+                                          double z,
+                                          double * y,
+                                          struct background * pba,
+                                          struct thermodynamics * pth,
+                                          struct thermo_workspace * ptw,
+                                          int current_ap_twin
+                                          );
   /** END TWIN SECTOR */
 
 
@@ -798,11 +833,10 @@ extern "C" {
 #define _m_e_twin _m_e_*pba->ratio_vev_twin /** Twin electron mass*/
 #define _epsilon0_perm_ 8.8541878128e-12 /** Vacuum Permittivity*/
 #define _sigma_twin  (_sigma_*(pba->alpha_dark/0.00729735)*(pba->alpha_dark/0.00729735)/pow(pba->ratio_vev_twin,2)) /**< Twin Thomson cross-section in m^2 */
-#define _Z_REC_MIN_twin 1000.
+#define _Z_REC_MIN_twin 1000. /* CHECK */
 #define _L_H_ion_twin 1.096787737e7*pba->ratio_vev_twin*(pba->alpha_dark/0.00729735)*(pba->alpha_dark/0.00729735)
-#define _L_He1_ion_twin 1.98310772e7*pba->ratio_vev_twin
-#define _L_He2_ion_twin 4.389088863e7*pba->ratio_vev_twin
+#define _L_He1_ion_twin 1.98310772e7*pba->ratio_vev_twin*(pba->alpha_dark/0.00729735)*(pba->alpha_dark/0.00729735)
+#define _L_He2_ion_twin 4.389088863e7*pba->ratio_vev_twin*(pba->alpha_dark/0.00729735)*(pba->alpha_dark/0.00729735)
 /** END TWIN SECTOR */
-
 
 #endif

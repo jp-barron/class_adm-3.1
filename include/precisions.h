@@ -205,6 +205,9 @@ class_precision_parameter(recfast_delta_z_full_H_recombination,double,50.)  /**<
 
 class_precision_parameter(recfast_delta_z_reio,double,2.)  /**< from class 3.0, smoothing radius delta z for reionization period  */
 
+
+    
+    
 class_precision_parameter(recfast_x_He0_trigger,double,0.995) /**< Switch for Helium full calculation during reco, raised from 0.99 to 0.995 for smoother Helium */
 class_precision_parameter(recfast_x_He0_trigger2,double,0.995)     /**< Switch for Helium full calculation during reco, for changing Helium flag, raised from 0.985 to same as previous one for smoother Helium */
 class_precision_parameter(recfast_x_He0_trigger_delta,double,0.05) /**< Smoothing factor for recombination approximation switching, found to be OK on 3.09.10 */
