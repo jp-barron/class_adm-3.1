@@ -977,6 +977,91 @@ int thermodynamics_checks(
   return _SUCCESS_;
 }
 
+
+/* BEGIN TWIN SECTOR */
+/* Code to compute lambert W function. Putting it here because I can't figure out how to use the function if it's defined in another file. */
+#include <math.h>
+#include <stdio.h>
+double LambertW(const double z);
+
+double LambertW1(const double z);
+
+const int dbgW=0;
+
+double LambertW(const double z) {
+  int i; 
+  const double eps=4.0e-16, em1=0.3678794411714423215955237701614608; 
+  double p,e,t,w;
+  if (dbgW) fprintf(stderr,"LambertW: z=%g\n",z);
+  if (z<-em1 || isinf(z) || isnan(z)) { 
+    fprintf(stderr,"LambertW: bad argument %g, exiting.\n",z); exit(1); 
+  }
+  if (0.0==z) return 0.0;
+  if (z<-em1+1e-4) { // series near -em1 in sqrt(q)
+    double q=z+em1,r=sqrt(q),q2=q*q,q3=q2*q;
+    return 
+     -1.0
+     +2.331643981597124203363536062168*r
+     -1.812187885639363490240191647568*q
+     +1.936631114492359755363277457668*r*q
+     -2.353551201881614516821543561516*q2
+     +3.066858901050631912893148922704*r*q2
+     -4.175335600258177138854984177460*q3
+     +5.858023729874774148815053846119*r*q3
+     -8.401032217523977370984161688514*q3*q;  // error approx 1e-16
+  }
+  /* initial approx for iteration... */
+  if (z<1.0) { /* series near 0 */
+    p=sqrt(2.0*(2.7182818284590452353602874713526625*z+1.0));
+    w=-1.0+p*(1.0+p*(-0.333333333333333333333+p*0.152777777777777777777777)); 
+  } else 
+    w=log(z); /* asymptotic */
+  if (z>3.0) w-=log(w); /* useful? */
+  for (i=0; i<10; i++) { /* Halley iteration */
+    e=exp(w); 
+    t=w*e-z;
+    p=w+1.0;
+    t/=e*p-0.5*(p+1.0)*t/p; 
+    w-=t;
+    if (fabs(t)<eps*(1.0+fabs(w))) return w; /* rel-abs error */
+  }
+  /* should never get here */
+  fprintf(stderr,"LambertW: No convergence at z=%g, exiting.\n",z); 
+  exit(1);
+}
+
+double LambertW1(const double z) {
+  int i; 
+  const double eps=4.0e-16, em1=0.3678794411714423215955237701614608; 
+  double p=1.0,e,t,w,l1,l2;
+  if (z<-em1 || z>=0.0 || isinf(z) || isnan(z)) { 
+    fprintf(stderr,"LambertW1: bad argument %g, exiting.\n",z); exit(1); 
+  }
+  /* initial approx for iteration... */
+  if (z<-1e-6) { /* series about -1/e */
+    p=-sqrt(2.0*(2.7182818284590452353602874713526625*z+1.0));
+    w=-1.0+p*(1.0+p*(-0.333333333333333333333+p*0.152777777777777777777777)); 
+  } else { /* asymptotic near zero */
+    l1=log(-z);
+    l2=log(-l1);
+    w=l1-l2+l2/l1;
+  }
+  if (fabs(p)<1e-4) return w;
+  for (i=0; i<10; i++) { /* Halley iteration */
+    e=exp(w); 
+    t=w*e-z;
+    p=w+1.0;
+    t/=e*p-0.5*(p+1.0)*t/p; 
+    w-=t;
+    if (fabs(t)<eps*(1.0+fabs(w))) return w; /* rel-abs error */
+  }
+  /* should never get here */
+  fprintf(stderr,"LambertW1: No convergence at z=%g, exiting.\n",z); 
+  exit(1);
+}
+/* END TWIN SECTOR */
+
+
 /**
  * Initialize the thermodynamics workspace.
  *
@@ -1029,11 +1114,15 @@ int thermodynamics_workspace_init(
   
   /* Hubble parameter today in SI units */
   ptw->SIunit_H0 = pba->H0 * _c_ / _Mpc_over_m_;
+  printf("H0 is %g",ptw->SIunit_H0);
+  printf("Radiation density is %g",pba->Omega0_g);
   /* H number density today in SI units*/
   ptw->SIunit_nH0 = 3.*ptw->SIunit_H0*ptw->SIunit_H0*pba->Omega0_b/(8.*_PI_*_G_*_m_H_)*(1.-ptw->YHe);
-  
   /* BEGIN #TWIN SECTOR */
   ptw->SIunit_nH0_twin = 3.*ptw->SIunit_H0*ptw->SIunit_H0*pba->Omega0_b_twin/(8.*_PI_*_G_*_m_H_twin)*(1.-ptw->YHe_twin); 
+  printf("Twin hydrogen density today = %g",ptw->SIunit_nH0_twin);
+  printf("Twin baryon energy density today = %g",pba->Omega0_b_twin);
+  printf("CDM energy density is %g",pba->Omega0_cdm);
   /* END TWIN SECTOR */
   /* CMB temperature today in Kelvin */
   ptw->Tcmb = pba->T_cmb;
@@ -1048,6 +1137,7 @@ int thermodynamics_workspace_init(
   ptw->const_NR_numberdens = 2.*_PI_*(_m_e_/_h_P_)*(_k_B_/_h_P_);
   /* Ionization energy for HI -- temperature equivalent in Kelvin */
   ptw->const_Tion_H = _h_P_*_c_*_L_H_ion_/_k_B_;
+  printf("SM Hydrogen binding energy temperature is %g",ptw->const_Tion_H);
   /* Ionization energy for HeI -- temperature equivalent in Kelvin */
   ptw->const_Tion_HeI = _h_P_*_c_*_L_He1_ion_/_k_B_;
   /* Ionization energy for HeII -- temperature equivalent in Kelvin */
@@ -1100,9 +1190,9 @@ int thermodynamics_workspace_init(
   /* END TWIN SECTOR */
   index_ap_twin=0;
   class_define_index(ptw->ptdw->index_ap_brec_twin,_TRUE_,index_ap_twin,1);// Before twin recombination. 
-  class_define_index(ptw->ptdw->index_ap_He1_twin,_TRUE_,index_ap_twin,1); //during 1st twin He-recombination (HeIII)  
+  //class_define_index(ptw->ptdw->index_ap_He1_twin,_TRUE_,index_ap_twin,1); //during 1st twin He-recombination (HeIII)  
   //class_define_index(ptw->ptdw->index_ap_He1f_twin,_TRUE_,index_ap_twin,1); //  in between 1st and 2nd twin He recombination 
-  class_define_index(ptw->ptdw->index_ap_He2_twin,_TRUE_,index_ap_twin,1); // beginning of 2nd twin He-recombination (HeII)s
+  //class_define_index(ptw->ptdw->index_ap_He2_twin,_TRUE_,index_ap_twin,1); // beginning of 2nd twin He-recombination (HeII)s
   class_define_index(ptw->ptdw->index_ap_H_twin,_TRUE_,index_ap_twin,1); //beginning of twin H-recombination (HI)
   class_define_index(ptw->ptdw->index_ap_frec_twin,_TRUE_,index_ap_twin,1);
   ptw->ptdw->ap_size_twin=index_ap_twin;
@@ -1133,22 +1223,35 @@ int thermodynamics_workspace_init(
   ptw->ptdw->ap_z_limits[ptw->ptdw->index_ap_reio] = 0.0; // today
 
 
-  /* BEGIN #TWIN SECTOR */
+  /* BEGIN #TWIN SECTOR */  
   class_alloc(ptw->ptdw->ap_z_limits_twin,ptw->ptdw->ap_size_twin*sizeof(double),pth->error_message);
-  ptw->z_H_twin_boltzmann_trigger = 0.02 * ptw->const_Tion_H_twin/ptw->Tnow_twin - 1.; /* Multiplier 0.02 is arbitrary - onset of recombination at 0.02 for SM is our guide here. This should be the redshift where the dark sector temperature is 0.02* the binding energy of hydrogen. CHECK.  */
-  ptw->z_H_twin_saha_trigger = 0.03 * ptw->const_Tion_H_twin/ptw->Tnow_twin - 1.;
-  ptw->z_He2_twin_trigger = 0.03 * ptw->const_Tion_HeI_twin/ptw->Tnow_twin - 1.;
+  double x_threshold_1, x_threshold_2,c1,c2,z_threshold_1,z_threshold_2;
+  x_threshold_1 = 0.9999;
+  x_threshold_2 = 0.99;
+  c1 = (x_threshold_1*x_threshold_1/(1-x_threshold_1))*ptw->SIunit_nH0_twin/exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin)); //Technically not right if Tmatter is different from Trad. 
+  c2 = ptw->const_Tion_H_twin/ptw->Tnow_twin;
+  z_threshold_1 = -2*c2/(3*LambertW1(-0.66667*pow(c1,.66667)*c2));  //2*c1/(3*LambertW(2*c1/(3*pow(c2,.66667))))-1;
+  
+  c1 = (x_threshold_2*x_threshold_2/(1-x_threshold_2))*ptw->SIunit_nH0_twin/exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin)); //Technically not right if Tmatter is different from Trad. 
+  c2 = ptw->const_Tion_H_twin/ptw->Tnow_twin;
+  
+  z_threshold_2 = -2*c2/(3*LambertW1(-0.66667*pow(c1,.66667)*c2)); //2*c1/(3*LambertW(2*c1/(3*pow(c2,.66667))))-1;
+  printf("Saha z threshold is %g",z_threshold_1);
+  printf("Boltzmann z threshold is %g",z_threshold_2);
+  ptw->z_H_twin_boltzmann_trigger = z_threshold_2;//0.04 * ptw->const_Tion_H_twin/ptw->Tnow_twin - 1.; /* Multiplier 0.02 is arbitrary - onset of recombination at 0.02 for SM is our guide here. This should be the redshift where the dark sector temperature is 0.02* the binding energy of hydrogen. CHECK.  */
+  ptw->z_H_twin_saha_trigger = z_threshold_1;//0.05 * ptw->const_Tion_H_twin/ptw->Tnow_twin - 1.;
+  //ptw->z_He2_twin_trigger = 0.03 * ptw->const_Tion_HeI_twin/ptw->Tnow_twin - 1.;
   //ptw->z_He1f_twin_trigger = 0.01 * ptw->const_Tion_HeII_twin/ptw->Tnow_twin - 1.;
-  ptw->z_He1_twin_trigger = 0.03 * ptw->const_Tion_HeII_twin/ptw->Tnow_twin - 1.;
-  printf("Redshift where first He Saha starts: %g",ptw->z_He1_twin_trigger);
-  printf("Redshift where second He Saha starts: %g",ptw->z_He2_twin_trigger);
+  //ptw->z_He1_twin_trigger = 0.03 * ptw->const_Tion_HeII_twin/ptw->Tnow_twin - 1.;
+  //printf("Redshift where first He Saha starts: %g",ptw->z_He1_twin_trigger);
+  //printf("Redshift where second He Saha starts: %g",ptw->z_He2_twin_trigger);
   printf("Redshift where H Saha starts: %g",ptw->z_H_twin_saha_trigger);
   printf("Redshift where H Boltzmann starts: %g",ptw->z_H_twin_boltzmann_trigger);
 
-  ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_brec_twin] = ptw->z_He1_twin_trigger;
-  ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He1_twin] = ptw->z_He2_twin_trigger;//ptw->z_He1f_twin_trigger; // First twin He-recombination (HeIII)
+  ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_brec_twin] = ptw->z_H_twin_saha_trigger;//ptw->z_He1_twin_trigger;
+  //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He1_twin] = ptw->z_He2_twin_trigger;//ptw->z_He1f_twin_trigger; // First twin He-recombination (HeIII)
   //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He1f_twin] = ptw->z_He2_twin_trigger; // in between 1st and 2nd twin He recombination 
-  ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He2_twin] = ptw->z_H_twin_saha_trigger; //  beginning of 2nd twin He-recombination
+  //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He2_twin] = ptw->z_H_twin_saha_trigger; //  beginning of 2nd twin He-recombination
   ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_H_twin] = ptw->z_H_twin_boltzmann_trigger;  // beginning early twin H-recombination 
   ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_frec_twin] = 0.;  // beginning full twin H-recombination 
   /* END TWIN SECTOR */
@@ -1178,9 +1281,9 @@ int thermodynamics_workspace_init(
   class_alloc(ptw->ptdw->ap_z_limits_delta_twin,ptw->ptdw->ap_size_twin*sizeof(double),pth->error_message);
 
   ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_brec_twin] = 0.;
-  ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_He1_twin] = 1;
+  //ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_He1_twin] = 1;
   //ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_He1f_twin] = 1;
-  ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_He2_twin] = 1;
+  //ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_He2_twin] = 1;
   ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_H_twin] = 1; //50 seems to be ok for SM stuff. Check back again later. 
   ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_frec_twin] = 1; //50 seems to be ok for SM stuff. 
   /* END TWIN SECTOR */
@@ -1946,7 +2049,7 @@ int thermodynamics_solve(
     /** - --> (a) fix current approximation scheme. */
 
     ptw->ptdw->ap_current = index_interval;
-    printf("Current interval is %d \n",index_interval);
+    //printf("Current interval is %d \n",index_interval);
 
     /** - --> (b) define the vector of quantities to be integrated
                   over. If the current interval starts from the
@@ -2300,6 +2403,11 @@ int thermodynamics_workspace_free(
   free(ptw->ptdw->ap_z_limits);
   free(ptw->ptdw->ap_z_limits_delta);
 
+  /* BEGIN #TWIN SECTOR */
+  free(ptw->ptdw->ap_z_limits_twin);
+  free(ptw->ptdw->ap_z_limits_delta_twin);
+  /* END TWIN SECTOR */
+
   switch (pth->recombination) {
 
   case hyrec:
@@ -2574,20 +2682,20 @@ int thermodynamics_vector_init_twin(
   if (ptdw->ap_current_twin == ptdw->index_ap_brec_twin) {
     /* Nothing else to add */
   }
-  else if (ptdw->ap_current_twin == ptdw->index_ap_He1_twin) {
+  //else if (ptdw->ap_current_twin == ptdw->index_ap_He1_twin) {
     /* Nothing else to add */
-  }
+  //}
   //else if (ptdw->ap_current_twin == ptdw->index_ap_He1f_twin) {
     /* Nothing else to add */
   //}
-  else if (ptdw->ap_current_twin == ptdw->index_ap_He2_twin) {
+  //else if (ptdw->ap_current_twin == ptdw->index_ap_He2_twin) {
     /* Nothing else to add */
-  }
+  //}
   else if (ptdw->ap_current_twin == ptdw->index_ap_H_twin) {
-    class_define_index(ptv->index_ti_x_He_twin,_TRUE_,index_ti,1);
+    //class_define_index(ptv->index_ti_x_He_twin,_TRUE_,index_ti,1);
   }
   else if (ptdw->ap_current_twin == ptdw->index_ap_frec_twin) {
-    class_define_index(ptv->index_ti_x_He_twin,_TRUE_,index_ti,1);
+    //class_define_index(ptv->index_ti_x_He_twin,_TRUE_,index_ti,1);
     class_define_index(ptv->index_ti_x_H_twin,_TRUE_,index_ti,1);
   }
   /* END TWIN SECTOR */
@@ -2607,7 +2715,7 @@ int thermodynamics_vector_init_twin(
   //printf("At start of interval, z = %g",z);
   
     ptdw->require_H = _FALSE_;
-    ptdw->require_He = _FALSE_;
+    //ptdw->require_He = _FALSE_;
   
   if (ptdw->ap_current_twin == ptdw->index_ap_brec_twin) {
     /* Store Tmat in workspace for later use */
@@ -2619,7 +2727,7 @@ int thermodynamics_vector_init_twin(
     ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin] = 0.;
     // Setting the SM temperature difference, we don't actually want this but we're forced to compute it because of the structure of the code in thermodynamics_derivs and _ionization_fractions
     ptdw->require_H_twin = _FALSE_;
-    ptdw->require_He_twin = _FALSE_;
+    //ptdw->require_He_twin = _FALSE_;
   }
   /* - in this scheme we start to evolve Helium and thus need to set its initial condition via the analytic function */
   else if (ptdw->ap_current_twin == ptdw->index_ap_H_twin) {
@@ -2634,7 +2742,7 @@ int thermodynamics_vector_init_twin(
 
     /* Set the new vector and its indices */
     ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin];
-    ptv->y[ptv->index_ti_x_He_twin] = ptdw->x_He_twin;
+    //ptv->y[ptv->index_ti_x_He_twin] = ptdw->x_He_twin;
     /* Free the old vector and its indices */
     class_call(thermodynamics_vector_free(ptdw->ptv),
                pth->error_message,
@@ -2642,10 +2750,11 @@ int thermodynamics_vector_init_twin(
 
     /* Copy the new vector into the position of the old one*/
     ptdw->ptv = ptv;
-    printf("Hydrogen recombination with saha, helium with boltzmann \n");
+    printf("Hydrogen recombination with saha");//, helium with boltzmann \n");
     printf("Redshift = %g\n",z);
+    printf("Current ionization fraction is %g",ptdw->x_noreio_twin);
     ptdw->require_H_twin = _FALSE_;
-    ptdw->require_He_twin = _TRUE_;
+    //ptdw->require_He_twin = _TRUE_;
   }
   /* - in the scheme of full recombination (=frec) we evolve all quantities and thus need to set their initial conditions.
        Tmat and x_He are solely taken from the previous scheme, x_H is set via the analytic function */
@@ -2661,7 +2770,7 @@ int thermodynamics_vector_init_twin(
     /* Set the new vector and its indices */
     ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin];
     ptv->y[ptv->index_ti_x_H_twin] = ptdw->x_H_twin;
-    ptv->y[ptv->index_ti_x_He_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_x_He_twin];
+    //ptv->y[ptv->index_ti_x_He_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_x_He_twin];
 
     /* Free the old vector and its indices */
     class_call(thermodynamics_vector_free(ptdw->ptv),
@@ -2674,29 +2783,29 @@ int thermodynamics_vector_init_twin(
     printf("Hydrogen recombination with boltzmann\n");
     printf("Redshift = %g\n",z);
     ptdw->require_H_twin = _TRUE_;
-    ptdw->require_He_twin = _TRUE_;
+    //ptdw->require_He_twin = _TRUE_;
   }
 
   /* - in all other approximations we only evolve Tmat and set its initial conditions from the previous scheme */
-  else{
+ // else{
     /* Store Tmat in workspace for later use */
-    ptdw->Tmat_twin = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin] + ptw->Tnow_twin*(1.+z);
+    //ptdw->Tmat_twin = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin] + ptw->Tnow_twin*(1.+z);
 
     /* Set the new vector and its indices */
-    ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin];
+    //ptv->y[ptv->index_ti_D_Tmat_twin] = ptdw->ptv->y[ptdw->ptv->index_ti_D_Tmat_twin];
 
     /* Free the old vector and its indices */
-    class_call(thermodynamics_vector_free(ptdw->ptv),
-               pth->error_message,
-               pth->error_message);
+    //class_call(thermodynamics_vector_free(ptdw->ptv),
+    //           pth->error_message,
+    //           pth->error_message);
 
     /* Copy the new vector into the position of the old one*/
-    ptdw->ptv = ptv;
-    printf("Redshift = %g\n",z);
+   // ptdw->ptv = ptv;
+    //printf("Redshift = %g\n",z);
 
-    ptdw->require_H_twin = _FALSE_;
-    ptdw->require_He_twin = _FALSE_;
-  }
+    //ptdw->require_H_twin = _FALSE_;
+    //ptdw->require_He_twin = _FALSE_;
+  //}
 
   return _SUCCESS_;
 }
@@ -3348,7 +3457,7 @@ int thermodynamics_derivs_twin(
 
   /* Shorthand notations */
   double z,Hz,dHdlna,heat_capacity;
-  double x_twin,nH_twin,Trad_twin,Tmat_twin,x_H_twin,x_He_twin,eps_twin,depsdlna_twin,rate_gamma_b_twin;
+  double x_twin,nH_twin,Trad_twin,Tmat_twin,x_H_twin,eps_twin,depsdlna_twin,rate_gamma_b_twin;//,x_He_twin
   /* Shorthand notations for all of the structs */
   struct thermodynamics_parameters_and_workspace * ptpaw;
   struct precision * ppr;
@@ -3444,7 +3553,7 @@ int thermodynamics_derivs_twin(
 
   /** - Derivative of the ionization fractions */
   x_H_twin = ptdw->x_H_twin;
-  x_He_twin = ptdw->x_He_twin;
+  //x_He_twin = ptdw->x_He_twin;
   x_twin = ptdw->x_noreio_twin;
 
     /** --> use  HyRec to get the derivatives d(x_H)/dz and
@@ -3469,12 +3578,12 @@ int thermodynamics_derivs_twin(
     }
 
      /*Helium equations */
-    if (ptdw->require_He_twin == _TRUE_) {
+    //if (ptdw->require_He_twin == _TRUE_) {
       //printf("Calculating helium derivative");
-      class_call(hyrec_dx_He_dz(pth,ptw->ptdw->phyrec_twin,x_H_twin,x_He_twin,x_twin,nH_twin,z,Hz,Tmat_twin,Trad_twin,pba->alpha_dark/0.00729735,_m_e_twin/_m_e_,&(dy[ptv->index_ti_x_He_twin])),
-                 ptw->ptdw->phyrec_twin->error_message,
-                 error_message);
-    }
+      //class_call(hyrec_dx_He_dz(pth,ptw->ptdw->phyrec_twin,x_H_twin,x_He_twin,x_twin,nH_twin,z,Hz,Tmat_twin,Trad_twin,pba->alpha_dark/0.00729735,_m_e_twin/_m_e_,&(dy[ptv->index_ti_x_He_twin])),
+                 //ptw->ptdw->phyrec_twin->error_message,
+                // error_message);
+    //}
 
 
   /** - Derivative of the matter temperature (relevant for both Recfast and HyRec cases) */
@@ -3536,7 +3645,7 @@ int thermodynamics_derivs_twin(
   * dD_Tmat/dz = d(-eps)/dz = - eps * dln(eps)/dz = eps *dln(eps)/dlna /(1.+z)
   **/
 
-  if (x_twin > 0.99) {//((ap_current_twin == ptdw->index_ap_brec_twin) || (ap_current_twin == ptdw->index_ap_He1_twin) || (ap_current_twin == ptdw->index_ap_He2_twin)) {
+  if (x_twin>0.8) {//(ap_current_twin == ptdw->index_ap_brec_twin) {//((ap_current_twin == ptdw->index_ap_brec_twin) || (ap_current_twin == ptdw->index_ap_He1_twin) || (ap_current_twin == ptdw->index_ap_He2_twin)) {
     /* Early time steady state equation */    
     dHdlna = (1.+z)*pvecback[pba->index_bg_H_prime]/pvecback[pba->index_bg_H] * _c_ / _Mpc_over_m_;
     eps_twin =  Trad_twin * Hz / rate_gamma_b_twin;
@@ -5387,7 +5496,7 @@ int thermodynamics_ionization_fractions_twin(
   struct thermo_vector * ptv = ptdw->ptv;
 
   /* Thermo quantities */
-  double x_H_twin,x_He_twin,xHeII_twin,x_twin=0.,Tmat_twin,rhs,sqrt_val,rescale_rhs = 1.;
+  double x_H_twin,x_twin=0.,Tmat_twin,rhs,sqrt_val,rescale_rhs = 1.;//,x_He_twin,xHeII_twin
   /* Analytical quantities */
 
   /* Varying fundamental constants (according to 1705.03925) */
@@ -5417,24 +5526,31 @@ int thermodynamics_ionization_fractions_twin(
   if (current_ap_twin == ptdw->index_ap_brec_twin) {
 
     /* This is equivalent to the formula for HeIII --> HeII in Saha, just using rhs' = 1/rhs */
-    rhs = ptw->SIunit_nH0_twin/exp( 1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeII_twin/Tmat_twin );
+    //rhs = ptw->SIunit_nH0_twin/exp( 1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeII_twin/Tmat_twin );
+    //if (pth->has_varconst == _TRUE_) {
+     // rhs /= rescale_rhs;
+    //}
+
+    //sqrt_val = sqrt(pow(1.-rhs*(1.+ptw->fHe_twin),2) + 4.*rhs*(1.+2*ptw->fHe_twin));
+
+    rhs = exp(1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_H_twin/Tmat_twin)/ptw->SIunit_nH0_twin;
     if (pth->has_varconst == _TRUE_) {
-      rhs /= rescale_rhs;
+      rhs *= rescale_rhs;
     }
+    x_H_twin = 2./(1. + sqrt(1 + 4./rhs));
+    x_twin = x_H_twin; 
 
-    sqrt_val = sqrt(pow(1.-rhs*(1.+ptw->fHe_twin),2) + 4.*rhs*(1.+2*ptw->fHe_twin));
-
-    x_twin = 2.*(1+2.*ptw->fHe_twin)/(1.-rhs*(1.+ptw->fHe_twin) + sqrt_val);
+    //x_twin = 1;//2.*(1+2.*ptw->fHe_twin)/(1.-rhs*(1.+ptw->fHe_twin) + sqrt_val);
     //printf("This should be just 1 if fHe_twin = 0 \n");
     //printf("x_twin = %g \n",x_twin);
     //printf("fHe_twin = %g \n",ptw->fHe_twin);
     //printf("Current redshift = %g \n",z);
     ptdw->x_H_twin = 1.;
-    ptdw->x_He_twin = 1.;
+    //ptdw->x_He_twin = 1.;
 
   }
   /** - --> second regime: first Helium recombination (analytic approximation) */
-  else if (current_ap_twin == ptdw->index_ap_He1_twin) {
+  /*else if (current_ap_twin == ptdw->index_ap_He1_twin) {
 
     rhs = exp( 1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeII_twin/Tmat_twin ) / ptw->SIunit_nH0_twin;
     if (pth->has_varconst == _TRUE_) {
@@ -5450,7 +5566,7 @@ int thermodynamics_ionization_fractions_twin(
     ptdw->x_H_twin = 1.;
     ptdw->x_He_twin = 1.;
 
-  }
+  }*/
   /** - --> third regime: first Helium recombination finished, H and Helium fully ionized */
   /*else if (current_ap_twin == ptdw->index_ap_He1f_twin) {*/
 
@@ -5471,10 +5587,10 @@ int thermodynamics_ionization_fractions_twin(
 
   }*/
   /** - --> fourth regime: second Helium recombination starts (analytic approximation) */
-  else if (current_ap_twin == ptdw->index_ap_He2_twin) {
+  //else if (current_ap_twin == ptdw->index_ap_He2_twin) {
 
     /* Assuming Saha equilibrium for HeII --> HeI with HII fully ionized */
-    rhs = 4.*exp(1.5*log(ptw->const_NR_numberdens*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeI_twin/Tmat_twin ) / ptw->SIunit_nH0_twin;
+    /*rhs = 4.*exp(1.5*log(ptw->const_NR_numberdens*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_HeI_twin/Tmat_twin ) / ptw->SIunit_nH0_twin;
     if (pth->has_varconst == _TRUE_) {
       rhs *= rescale_rhs;
     }
@@ -5489,7 +5605,7 @@ int thermodynamics_ionization_fractions_twin(
     ptdw->x_H_twin = 1.;
     ptdw->x_He_twin = (x_twin-1.)/ptw->fHe_twin;
 
-  }
+  }*/
   /** - --> fifth regime: Hydrogen recombination starts (analytic approximation)
       while Helium recombination continues (full equation) */
   else if (current_ap_twin == ptdw->index_ap_H_twin) {
@@ -5500,30 +5616,32 @@ int thermodynamics_ionization_fractions_twin(
     }
 
     /* Assuming Saha equilibrium for HII->HI. Includes xHeII corrections from incomplete recombination of HeII --> HeI (non-zero x_HeII) */
-    xHeII_twin = y[ptv->index_ti_x_He_twin]*ptw->fHe_twin;
-    printf("xHeII is %g\n",xHeII_twin);
-    x_H_twin = 2./(1.+xHeII_twin/rhs + sqrt((1.+xHeII_twin/rhs)*(1.+xHeII_twin/rhs)+4./rhs));
-    //x_H_twin = 2./(1. + sqrt(1 + 4./rhs));
-    x_He_twin = y[ptv->index_ti_x_He_twin];
-    printf("xH is %g\n",x_H_twin);
-    printf("xHe is %g\n",x_He_twin);
-    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+    //xHeII_twin = y[ptv->index_ti_x_He_twin]*ptw->fHe_twin;
+    //printf("xHeII is %g\n",xHeII_twin);
+    //x_H_twin = 2./(1.+xHeII_twin/rhs + sqrt((1.+xHeII_twin/rhs)*(1.+xHeII_twin/rhs)+4./rhs));
+    x_H_twin = 2./(1. + sqrt(1 + 4./rhs));
+    //x_He_twin = y[ptv->index_ti_x_He_twin];
+    //printf("xH is %g\n",x_H_twin);
+    //printf("xHe is %g\n",x_He_twin);
+    x_twin = x_H_twin; //+ ptw->fHe_twin * x_He_twin;
     //printf("H epoch\n");
-
-    printf("x_twin = %g \n",x_twin);
-    printf("Current redshift = %g \n",z);
+    
+    //printf("x_twin = %g \n",x_twin);
+    //printf("Current redshift = %g \n",z);
+    //printf("Twin hydrogen density = %g",ptw->SIunit_nH0_twin);
+    //printf("rhs = %g",rhs);
     ptdw->x_H_twin = x_H_twin;
-    ptdw->x_He_twin = x_He_twin;
+    //ptdw->x_He_twin = x_He_twin;
 
   }
   /** - --> sixth regime: full Hydrogen and Helium equations */
   else if (current_ap_twin == ptdw->index_ap_frec_twin) {
     x_H_twin = y[ptv->index_ti_x_H_twin];
-    x_He_twin = y[ptv->index_ti_x_He_twin];
-    x_twin = x_H_twin + ptw->fHe_twin * x_He_twin;
+    //x_He_twin = y[ptv->index_ti_x_He_twin];
+    x_twin = x_H_twin;// + ptw->fHe_twin * x_He_twin;
 
     ptdw->x_H_twin = x_H_twin;
-    ptdw->x_He_twin = x_He_twin;
+    //ptdw->x_He_twin = x_He_twin;
     //printf("H full epoch\n");
 
   }

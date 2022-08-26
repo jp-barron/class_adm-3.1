@@ -1,5 +1,4 @@
-/** @file input.c Documented input module.
- *
+ /*
  * Julien Lesgourgues, 27.08.2010
  * * internal organization of the module structured and improved by Nils Schoeneberg and Matteo Lucca, 07.03.2019
  *

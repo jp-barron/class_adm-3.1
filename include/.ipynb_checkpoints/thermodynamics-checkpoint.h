@@ -9,6 +9,7 @@
 #include "wrap_hyrec.h"
 #include "wrap_recfast.h"
 #include "injection.h"
+//#include "lambertw.h"
 
 /**
  * List of possible recombination algorithms.
