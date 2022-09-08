@@ -134,7 +134,7 @@ struct background
   double Delta_N_twin;
   double m_p_dark;
   double m_e_dark;
-  double alpha_dark;
+  double alphafs_dark;
   double ratio_vev_twin;
   /* TWIN: Input derived parameters */
   double Omega0_b_twin;

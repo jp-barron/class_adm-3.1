@@ -1,4 +1,3 @@
-/*******************************************************************************************************/
 /*                 HYREC-2: Hydrogen and Helium Recombination Code                                      */
 /*         Written by Yacine Ali-Haimoud and Chris Hirata (2010-17)                                     */
 /*             with contributions from Nanoom Lee (2020)                                                */
@@ -62,11 +61,11 @@
 
 /*** Effective rate tables and associated parameters ***/
 
-#define ALPHA_FILE  "Alpha_inf.dat"                 /* Effective recombination coefficients to 2s and 2p */
-#define RR_FILE     "R_inf.dat"                     /* Effective transfer rate R_{2p,2s} */
+#define ALPHA_FILE  "Alpha_Extended_inf.dat"//"Alpha_inf.dat"                 /* Effective recombination coefficients to 2s and 2p */
+#define RR_FILE     "R_Extended_inf.dat"//"R_inf.dat"                     /* Effective transfer rate R_{2p,2s} */
 #define TR_MIN 0.004                                /* Minimum Tr in eV */
-#define TR_MAX 0.4                                  /* Maximum Tr in eV */
-#define NTR    100                                  /* Number of Tr values */
+#define TR_MAX 1.36//0.4                                  /* Maximum Tr in eV */
+#define NTR    200                                  /* Number of Tr values */
 #define T_RATIO_MIN 0.1                             /* T_RATIO is min(Tm/Tr, Tr/Tm) */
 #define T_RATIO_MAX 1.0
 #define NTM 40

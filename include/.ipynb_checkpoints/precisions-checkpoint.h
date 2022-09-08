@@ -122,6 +122,10 @@ class_string_parameter(sBBN_twin_file,"/external/bbn/sBBN_twin.dat","sBBN_twin f
  */
 class_precision_parameter(thermo_z_initial,double,5.e6)
 class_precision_parameter(thermo_z_initial_if_idm_dr,double,1.e9)
+/* BEGIN #TWIN SECTOR */
+class_precision_parameter(thermo_z_initial_if_twin,double,1.e9)
+/* END TWIN SECTOR */
+
 /**
  * The switch z for the recfast calculation towards linear sampling
  */
@@ -135,6 +139,9 @@ class_precision_parameter(thermo_Nz_lin,int,20000)
  */
 class_precision_parameter(thermo_Nz_log,int,5000)
 class_precision_parameter(thermo_Nz_log_if_idm_dr,int,10000)
+/* BEGIN #TWIN SECTOR */
+class_precision_parameter(thermo_Nz_log_if_twin,int,10000)
+/* END TWIN SECTOR */
 /**
  * Evolver to be used for thermodynamics (rk, ndf15)
  */

@@ -1935,7 +1935,9 @@ int background_checks(
     if (pba->background_verbose > 0) {
       printf(" -> twin sector Delta Neff = %e\n",N_twin);
       printf(" -> Omega0_b_twin = %g \n",pba->Omega0_b_twin);
+      printf(" -> Omega0_idm_dr = %g \n",pba->Omega0_idm_dr);
       printf(" -> Omega0_g_twin = %g \n",pba->Omega0_g_twin);
+      printf(" -> Omega0_idr = %g \n",pba->Omega0_idr);
       printf(" -> Omega0_ur_twin = %g \n",pba->Omega0_ur_twin);
       printf(" -> T0_twin = %g K\n",pba->T0_twin);
       printf(" -> T0_ur_twin = %g K\n",pba->T0_ur_twin);

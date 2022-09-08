@@ -103,8 +103,14 @@ double rec_TLA_dxHIIdlna(REC_COSMOPARAMS *cosmo, double xe, double xHII, double 
   s          = SAHA_FACT(fsR, meR) *TR*sqrt(TR) *exp(-EI/TR)/nH;
   Dxe2       = xe*xHII - s*(1.-xHII);    /* xe xp - xe xp[Saha eq with 1s] -- gives more compact expressions */
   DalphaB    = alphaB_TM - alphaB_TR;
-
+  /*if (1.-xHII < 0){
+      printf("Ionization fraction is greater than one,1-x = %g",1.-xHII);
+  }
+  if (-nH*(s*(1.-xHII)*DalphaB + Dxe2*alphaB_TM)*C/H + (cosmo->inj_params->ion + (1.-C)*cosmo->inj_params->exclya)/H > 0){
+      printf("Derivative of ionization fraction computed with Peebles is <0. Matter temperature is %g, radiation temprature is %g",TM,TR);
+  }*/
   return -nH*(s*(1.-xHII)*DalphaB + Dxe2*alphaB_TM)*C/H + (cosmo->inj_params->ion + (1.-C)*cosmo->inj_params->exclya)/H;
+  
 
 }
 
@@ -351,6 +357,9 @@ void interpolate_rates(double Alpha[2], double DAlpha[2], double Beta[2], double
   /* T_RATIO is defined to be min(TM_TR, TR_TM) */
   if (TM_TR > 1.) {
     T_RATIO = 1./TM_TR; i = 2;
+    /* BEGIN #TWIN SECTOR */
+    printf("Warning: Tm > Tr, but this shouldn't happen for twin sector. Recombination coefficients are meaningless.");
+    /* END TWIN SECTOR */
   }
   else {
     T_RATIO = TM_TR; i = 0;

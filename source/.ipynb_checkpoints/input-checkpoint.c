@@ -2147,7 +2147,15 @@ int input_read_parameters_general(struct file_content * pfc,
   }
 
   /** END TWIN SECTOR */
-
+    
+    
+  /* BEGIN #TWIN SECTOR */
+  /* Manually set z threshold for boltzmann evolution in twin sector */
+  class_call(parser_read_double(pfc,"z_threshold_twin",&param1,&flag1,errmsg),errmsg,errmsg);
+  if (flag1 == _TRUE_) {
+      pth->z_threshold_twin = param1;
+  }
+  /* END TWIN SECTOR */
 
   /** 9) Damping scale */
   /* Read */
@@ -2709,7 +2717,7 @@ int input_read_parameters_species(struct file_content * pfc,
                "The fraction of twin sector must be between 0 and 1, you asked for r_all_twin=%e",param1);
       if (flag1 == _TRUE_)
         pba->r_all_twin = param1;
-  /*April 26: Added m_p_dark and m_e_dark and alpha_dark as parameters. */
+  /*April 26: Added m_p_dark and m_e_dark and alphafs_dark as parameters. */
   class_call(parser_read_double(pfc,"m_p_dark",&param1,&flag1,errmsg),
               errmsg,
               errmsg);
@@ -2727,14 +2735,14 @@ int input_read_parameters_species(struct file_content * pfc,
       if (flag1 == _TRUE_)
         pba->m_e_dark = param1;
 
-  class_call(parser_read_double(pfc,"alpha_dark",&param1,&flag1,errmsg),
+  class_call(parser_read_double(pfc,"alphafs_dark",&param1,&flag1,errmsg),
               errmsg,
               errmsg);
         class_test((param1 < 0.) || (param1 > 1),
               errmsg,
-               "The dark sector fine structure constant must be between 0 and 1, you asked for alpha_dark=%e",param1);
+               "The dark sector fine structure constant must be between 0 and 1, you asked for alphafs_dark=%e",param1);
       if (flag1 == _TRUE_)
-        pba->alpha_dark = param1;
+        pba->alphafs_dark = param1;
 
 
 
@@ -2769,13 +2777,13 @@ int input_read_parameters_species(struct file_content * pfc,
 
 
     /* If any one of the twin parameters is zero, the code completely ignores the twin sector. Changed April 26 to be consistent with new parameters */
-    if(((pba->r_all_twin != 0.) || (pba->Delta_N_twin != 0.)||(pba->m_p_dark !=0.)||(pba->m_e_dark !=0.) || (pba->alpha_dark !=0.)) && (pba->r_all_twin)*(pba->Delta_N_twin)*(pba->m_p_dark)*(pba->m_e_dark)*(pba->alpha_dark)==0.){
+    if(((pba->r_all_twin != 0.) || (pba->Delta_N_twin != 0.)||(pba->m_p_dark !=0.)||(pba->m_e_dark !=0.) || (pba->alphafs_dark !=0.)) && (pba->r_all_twin)*(pba->Delta_N_twin)*(pba->m_p_dark)*(pba->m_e_dark)*(pba->alphafs_dark)==0.){
           printf("-->[Twin Warning:] All the input parameters for the dark sector should be non-zero in .ini file.\n   Completely ignoring the dark sector!\n");
           pba->r_all_twin = 0.;
           pba->Delta_N_twin = 0.;
           pba->m_p_dark=0.;
           pba->m_e_dark=0.;
-          pba->alpha_dark=0.;
+          pba->alphafs_dark=0.;
       };
 
     if(pba->r_all_twin!=0.){
@@ -2797,7 +2805,6 @@ int input_read_parameters_species(struct file_content * pfc,
       }
       pba->Omega0_idr = pba->Omega0_g_twin;
       pba->T_idr = pba->T0_twin;
-      Omega_tot += pba->Omega0_idr;
     };
 
   /** END TWIN SECTOR */
@@ -2843,7 +2850,7 @@ int input_read_parameters_species(struct file_content * pfc,
     /** START #TWIN SECTOR */
     if(pba->r_all_twin!=0.){
       pba->Omega0_cdm += pba->Omega0_idm_dr;
-      Omega_tot += pba->Omega0_idm_dr;
+      //Omega_tot += pba->Omega0_idm_dr;
     };
     /** END TWIN SECTOR */
   }
@@ -3034,6 +3041,7 @@ int input_read_parameters_species(struct file_content * pfc,
 
   /* ** BUDGET EQUATION ** -> Add your species here */
   /* Compute Omega_tot */
+  printf("Omega_tot is %g, should be 0\n",Omega_tot);
   Omega_tot = pba->Omega0_g;
   Omega_tot += pba->Omega0_b;
   Omega_tot += pba->Omega0_ur;
@@ -5497,6 +5505,7 @@ int input_default_params(struct background *pba,
   /** START #TWIN SECTOR */
   /** TWIN thermodynamics default */
   pth->YHe_twin = _YHE_BBN_;
+  pth->z_threshold_twin = 1000.;
   /** END TWIN SECTOR */
 
   /** 7) Recombination algorithm */

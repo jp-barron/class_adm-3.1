@@ -6001,6 +6001,12 @@ int perturbations_approximations(
                                    ppw->pvecthermo),
                pth->error_message,
                ppt->error_message);
+               
+    if (ppw->pvecthermo[pth->index_th_dmu_idm_dr] < 0) {
+        printf("Warning: dmu_idm_dr < 0 and is = %g. Setting to 0.\n",ppw->pvecthermo[pth->index_th_dmu_idm_dr]);
+        ppw->pvecthermo[pth->index_th_dmu_idm_dr] = 0.;
+    
+    }
 
     /** - ---> (b.1.) if \f$ \kappa'=0 \f$, recombination is finished; tight-coupling approximation must be off */
 
@@ -6043,7 +6049,7 @@ int perturbations_approximations(
         ppw->approx[ppw->index_ap_tca_idm_dr] = (int)tca_idm_dr_off;
       }
       else{
-
+        
         class_test(1./ppw->pvecthermo[pth->index_th_dmu_idm_dr] < 0.,
                    ppt->error_message,
                    "negative tau_idm_dr=1/dmu_idm_dr=%e at z=%e, conformal time=%e.\n",
