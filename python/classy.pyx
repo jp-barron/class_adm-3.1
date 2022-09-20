@@ -1952,6 +1952,18 @@ cdef class Class:
                 value = self.sd.sd_parameter_table[1]
             elif name == 'mu_sd':
                 value = self.sd.sd_parameter_table[2]
+            # BEGIN #TWIN SECTOR 
+            elif name == 'r_all_twin':
+                value = self.ba.r_all_twin
+            elif name == 'm_p_dark':
+                value = self.ba.m_p_dark
+            elif name == 'm_e_dark':
+                value = self.ba.m_e_dark
+            elif name == 'alphafs_dark':
+                value = self.ba.alphafs_dark
+            elif name == 'Delta_N_twin':
+                value = self.ba.Delta_N_twin
+            #END TWIN SECTOR 
             else:
                 raise CosmoSevereError("%s was not recognized as a derived parameter" % name)
             derived[name] = value

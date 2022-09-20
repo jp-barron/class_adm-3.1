@@ -2712,28 +2712,72 @@ int input_read_parameters_species(struct file_content * pfc,
   class_call(parser_read_double(pfc,"r_all_twin",&param1,&flag1,errmsg),
               errmsg,
               errmsg);
-        class_test((param1 < 0.) || (param1 > 1.),
+  class_call(parser_read_double(pfc,"log10_r_all_twin",&param2,&flag2,errmsg),
+              errmsg,
+              errmsg);
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+             errmsg,
+             "You can only enter one of 'r_all_twin' or 'log10_r_all_twin'.");
+  /* Complete set of parameters */
+  if (flag1 == _TRUE_){
+    class_test((param1 < 0.) || (param1 > 1.),
               errmsg,
                "The fraction of twin sector must be between 0 and 1, you asked for r_all_twin=%e",param1);
-      if (flag1 == _TRUE_)
-        pba->r_all_twin = param1;
+    pba->r_all_twin = param1;
+  }
+  else if (flag2 == _TRUE_){
+    class_test((param2 > 0.),
+              errmsg,
+               "The fraction of twin sector must be less than 1, you asked for log10_r_all_twin=%e",param2);
+    pba->r_all_twin = pow(10,param2);
+  }
+        
   /*April 26: Added m_p_dark and m_e_dark and alphafs_dark as parameters. */
   class_call(parser_read_double(pfc,"m_p_dark",&param1,&flag1,errmsg),
               errmsg,
               errmsg);
-        class_test((param1 < 0.),
+  class_call(parser_read_double(pfc,"log10_m_p_dark",&param2,&flag2,errmsg),
               errmsg,
-               "The dark proton mass must be > 0, you asked for m_p_dark=%e",param1);
-      if (flag1 == _TRUE_)
-        pba->m_p_dark = param1;
+              errmsg);
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+             errmsg,
+             "You can only enter one of 'm_p_dark' or 'log10_m_p_dark'.");
+  /* Complete set of parameters */
+  if (flag1 == _TRUE_){
+    class_test((param1 < 0.),
+              errmsg,
+                "The dark proton mass must be > 0, you asked for m_p_dark=%e",param1);
+    pba->m_p_dark = param1;
+  }
+  else if (flag2 == _TRUE_){
+    pba->m_p_dark = pow(10,param2);
+  }
+    
   class_call(parser_read_double(pfc,"m_e_dark",&param1,&flag1,errmsg),
               errmsg,
               errmsg);
-        class_test((param1 < 0.),
+  class_call(parser_read_double(pfc,"log10_m_e_dark",&param2,&flag2,errmsg),
               errmsg,
-               "The dark electron mass must be > 0, you asked for m_e_dark=%e",param1);
-      if (flag1 == _TRUE_)
-        pba->m_e_dark = param1;
+              errmsg);
+  class_call(parser_read_double(pfc,"log10_me_mp_dark_ratio",&param3,&flag3,errmsg),
+              errmsg,
+              errmsg);  
+  class_test(class_at_least_two_of_three(flag1,flag2,flag3),
+             errmsg,
+             "You can only enter one of 'm_e_dark','log10_m_e_dark', and 'log10_me_mp_dark_ratio'.");
+  /* Complete set of parameters */
+  if (flag1 == _TRUE_){
+    class_test((param1 < 0.),
+              errmsg,
+                "The dark electron mass must be > 0, you asked for m_e_dark=%e",param1);
+    pba->m_e_dark = param1;
+  }
+  else if (flag2 == _TRUE_){
+    pba->m_e_dark = pow(10,param2);
+  }
+  else if (flag3 == _TRUE_){
+    pba->m_e_dark = pow(10,param3)*pba->m_p_dark;
+  }
 
   class_call(parser_read_double(pfc,"alphafs_dark",&param1,&flag1,errmsg),
               errmsg,
@@ -2743,18 +2787,53 @@ int input_read_parameters_species(struct file_content * pfc,
                "The dark sector fine structure constant must be between 0 and 1, you asked for alphafs_dark=%e",param1);
       if (flag1 == _TRUE_)
         pba->alphafs_dark = param1;
-
+  class_call(parser_read_double(pfc,"alphafs_dark",&param1,&flag1,errmsg),
+              errmsg,
+              errmsg);
+  class_call(parser_read_double(pfc,"log10_alphafs_dark",&param2,&flag2,errmsg),
+              errmsg,
+              errmsg);
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+             errmsg,
+             "You can only enter one of 'alphafs_dark' or 'log10_alphafs_dark'.");
+  /* Complete set of parameters */
+  if (flag1 == _TRUE_){
+    class_test((param1 < 0.) || (param1 > 1),
+              errmsg,
+                "The dark sector fine structure constant must be between 0 and 1, you asked for alphafs_dark=%e",param1);
+    pba->alphafs_dark = param1;
+  }
+  else if (flag2 == _TRUE_){
+    class_test(param2>0,
+              errmsg,
+                "The dark sector fine structure constant must be less than 1, you asked for log10_alphafs_dark=%e",param1)
+    pba->alphafs_dark = pow(10,param2);
+  }
 
 
   /* TWIN read N_twin */
   class_call(parser_read_double(pfc,"Delta_N_twin",&param1,&flag1,errmsg),
               errmsg,
               errmsg);
+  class_call(parser_read_double(pfc,"log10_Delta_N_twin",&param2,&flag2,errmsg),
+              errmsg,
+              errmsg);
+  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+             errmsg,
+             "You can only enter one of 'Delta_N_twin' or 'log10_Delta_N_twin'.");    
+        
+      if (flag1 == _TRUE_) {
         class_test((param1 < 0.001) || (param1 > 1.),
               errmsg,
                "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for Delta_N_twin = %e",param1);
-      if (flag1 == _TRUE_) {
         pba->Delta_N_twin = param1;
+        
+      }
+      else if (flag2 == _TRUE_) {
+        class_test((param2 < -3.) || (param2 > 0.),
+              errmsg,
+               "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for log10_Delta_N_twin = %e",param2);
+        pba->Delta_N_twin = pow(10,param2);
       }
 
  /*April 26: We don't need the ratio_vev_twin, but we'll define it as m_e_dark/m_e later so we can still use it in all the places where it's useful. Generalize and remove later 
@@ -3041,7 +3120,7 @@ int input_read_parameters_species(struct file_content * pfc,
 
   /* ** BUDGET EQUATION ** -> Add your species here */
   /* Compute Omega_tot */
-  printf("Omega_tot is %g, should be 0\n",Omega_tot);
+  //printf("Omega_tot is %g, should be 0\n",Omega_tot);
   Omega_tot = pba->Omega0_g;
   Omega_tot += pba->Omega0_b;
   Omega_tot += pba->Omega0_ur;

@@ -1268,15 +1268,15 @@ int thermodynamics_workspace_init(
   So we're checking when Gamma = sigma_T * n_e_all(z) < 2H(z), solving this for z. We can't definitely say we're going to be in matter vs radiation domination so H is 
   non-trivial to get: H(z) = H0 sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3). If we assume matter domination it's easier. Does this situation only arise at z<3200?*/
   
-  z_threshold_mat = pow(2*sqrt(pba->Omega0_m)*ptw->SIunit_H0/(_sigma_twin * ptw->SIunit_nH0_twin * _c_),.666667)-1;
-  z_threshold_rad = 2*sqrt(pba->Omega0_r)*ptw->SIunit_H0/(_sigma_twin * ptw->SIunit_nH0_twin * _c_)-1;
-  printf("Compton decoupling threshold z, assuming matter domination: %g\n",z_threshold_mat);
-  printf("Compton decoupling threshold z, assuming radiation domination: %g\n",z_threshold_rad);
+  //z_threshold_mat = pow(2*sqrt(pba->Omega0_m)*ptw->SIunit_H0/(_sigma_twin * ptw->SIunit_nH0_twin * _c_),.666667)-1;
+  //z_threshold_rad = 2*sqrt(pba->Omega0_r)*ptw->SIunit_H0/(_sigma_twin * ptw->SIunit_nH0_twin * _c_)-1;
+  //printf("Compton decoupling threshold z, assuming matter domination: %g\n",z_threshold_mat);
+  //printf("Compton decoupling threshold z, assuming radiation domination: %g\n",z_threshold_rad);
   //printf("Saha z threshold is %g\n",z_threshold_1);
-  printf("Boltzmann z threshold is %g\n",z_threshold_1);
-  printf("0.1 times binding energy is %g \n",0.099*ptw->const_Tion_H_twin/ptw->Tnow_twin -1);
+  //printf("Boltzmann z threshold is %g\n",z_threshold_1);
+  //printf("0.1 times binding energy is %g \n",0.099*ptw->const_Tion_H_twin/ptw->Tnow_twin -1);
   z_threshold_choice = z_threshold_1;
-  if (z_threshold_rad > z_threshold_1) {
+  /*if (z_threshold_rad > z_threshold_1) {
         z_threshold_choice = z_threshold_rad;
         printf("Compton rate falls below Hubble before dark ionization fraction would start falling. Using z_dec as switch for Boltzmann evolution of dark sector.\n");
         //Decoupling happens before naive Saha equilibrium lets x_e fall below 0.999. 
@@ -1291,8 +1291,8 @@ int thermodynamics_workspace_init(
         z_threshold_choice = 0.099*ptw->const_Tion_H_twin/ptw->Tnow_twin -1;
         printf("Using T corresponding to 0.099*dark hydrogen binding energy as switch for Boltzmann evolution of dark sector.\n");
   }
-  z_threshold_choice = 700;
-  ptw->z_H_twin_boltzmann_trigger = pth->z_threshold_twin;//z_threshold_choice;//z_threshold_2
+  z_threshold_choice = 700;*/
+  ptw->z_H_twin_boltzmann_trigger = z_threshold_choice; //pth->z_threshold_twin;//z_threshold_2
   //ptw->z_H_twin_saha_trigger = z_threshold_1;//0.05 * ptw->const_Tion_H_twin/ptw->Tnow_twin - 1.;
   //ptw->z_He2_twin_trigger = 0.03 * ptw->const_Tion_HeI_twin/ptw->Tnow_twin - 1.;
   //ptw->z_He1f_twin_trigger = 0.01 * ptw->const_Tion_HeII_twin/ptw->Tnow_twin - 1.;
@@ -1300,7 +1300,7 @@ int thermodynamics_workspace_init(
   //printf("Redshift where first He Saha starts: %g",ptw->z_He1_twin_trigger);
   //printf("Redshift where second He Saha starts: %g",ptw->z_He2_twin_trigger);
   //printf("Redshift where H Saha starts: %g\n",ptw->z_H_twin_saha_trigger);
-  //printf("Redshift where H Boltzmann starts: %g\n",ptw->z_H_twin_boltzmann_trigger);
+  printf("Redshift where dark H Boltzmann starts: %g\n",ptw->z_H_twin_boltzmann_trigger);
 
   ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_brec_twin] = ptw->z_H_twin_boltzmann_trigger;//ptw->z_H_twin_saha_trigger;//ptw->z_He1_twin_trigger;
   //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He1_twin] = ptw->z_He2_twin_trigger;//ptw->z_He1f_twin_trigger; // First twin He-recombination (HeIII)
@@ -1351,7 +1351,7 @@ int thermodynamics_workspace_init(
                 sizeof(struct thermohyrec),
                 pth->error_message);
 
-    ptw->ptdw->phyrec->thermohyrec_verbose = 3;//pth->hyrec_verbose;
+    ptw->ptdw->phyrec->thermohyrec_verbose = 0;//pth->hyrec_verbose;
     class_call(thermodynamics_hyrec_init(ppr,pba,pth,ptw->SIunit_nH0,pba->T_cmb,ptw->fHe, ptw->ptdw->ap_z_limits[ptw->ptdw->index_ap_brec],ptw->ptdw->phyrec),
                ptw->ptdw->phyrec->error_message,
                pth->error_message);
@@ -1361,7 +1361,7 @@ int thermodynamics_workspace_init(
                 sizeof(struct thermohyrec),
                 pth->error_message);
 
-    ptw->ptdw->phyrec_twin->thermohyrec_verbose = 3;//pth->hyrec_verbose;
+    ptw->ptdw->phyrec_twin->thermohyrec_verbose = 0;//pth->hyrec_verbose;
     class_call(thermodynamics_hyrec_init(ppr,pba,pth,ptw->SIunit_nH0_twin,ptw->Tnow_twin,ptw->fHe_twin, ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_brec_twin],ptw->ptdw->phyrec_twin),
                ptw->ptdw->phyrec_twin->error_message,
                pth->error_message);  
@@ -3668,12 +3668,12 @@ int thermodynamics_derivs_twin(
   */
 
   /* Photon-Baryon temperature change rate  */
-  rate_photorecombination = 0.;
-  rate_photoionization = 0.;
-  rate_freefree = 0.;
-  mu_D = (_m_e_twin * pba->m_p_dark*_GeV_over_kg_)/(_m_e_twin + pba->m_p_dark*_GeV_over_kg_);//In GeV. 
+  //rate_photorecombination = 0.;
+  //rate_photoionization = 0.;//pow(pba->alphafs_dark,3)*pow(Trad_twin,2)/(3*_PI_) * x2s * nH_twin * exp(-ptw->const_Tion_H_twin/(4*Trad_twin))*3973.6*pow(Trad_twin/ptw->const_Tion_H_twin,-0.0222)/pow((2.012 +pow(Trad_twin/ptw->const_Tion_H_twin,0.2412)),6.55);
+  //rate_freefree = 0.;
+  //mu_D = (_m_e_twin * pba->m_p_dark*_GeV_over_kg_)/(_m_e_twin + pba->m_p_dark*_GeV_over_kg_);//In kg 
 
-  rate_rayleigh = (2*_PI_*pow(_c_,3)*pow(_k_B_,8)/_h_P_)*430080. * 1.002008 * pow(pba->alphafs_dark,2) * nH_twin * (1-x_twin) * pow(Trad_twin,8)/(pow(_PI_,2) * pow(pow(pba->alphafs_dark,2)*mu_D*_c_*_c_/2.,4)*(_m_H_twin)*pow(_m_e_twin,2))/(3 * _k_B_ * nH_twin);//*(Trad_twin-Tmat_twin) Rate in SI multiplied by kB^9 c^3/hbar to get it in units of Joule/second/meter^3. 
+  //rate_rayleigh = (2*_PI_*pow(_c_,3)*pow(_k_B_,8)/_h_P_)*430080. * 1.002008 * pow(pba->alphafs_dark,2) * nH_twin * (1-x_twin) * pow(Trad_twin,8)/(pow(_PI_,2) * pow(pow(pba->alphafs_dark,2)*mu_D*_c_*_c_/2.,4)*(_m_H_twin)*pow(_m_e_twin,2))/(3 * _k_B_ * nH_twin*(1.+x_twin+ptw->fHe_twin));//*(Trad_twin-Tmat_twin) Rate in SI multiplied by kB^9 c^3/hbar to get it in units of Joule/second/meter^3. 
 
 
   rate_gamma_b_twin = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pvecback[pba->index_bg_rho_g_twin] * _Jm3_over_Mpc2_ ) * x_twin / (1.+x_twin+ptw->fHe_twin);// + 2*(rate_photorecombination - rate_photoionization - rate_freefree + rate_rayleigh)/(3 * _k_B_ * nH_twin);
@@ -3729,7 +3729,7 @@ int thermodynamics_derivs_twin(
   * dD_Tmat/dz = d(-eps)/dz = - eps * dln(eps)/dz = eps *dln(eps)/dlna /(1.+z)
   **/
 
-  if ( ap_current_twin == ptdw->index_ap_brec_twin){//((Trad_twin-Tmat_twin)/Trad_twin <1e-3){// && (x_twin > 0.1)){//1e-3 is arbitrary - this is just supposed to be on while the temp difference is small.
+  if ((Trad_twin-Tmat_twin)/Trad_twin <1e-3 || (x_twin > 0.1) || (ap_current_twin == ptdw->index_ap_brec_twin)) {//( ap_current_twin == ptdw->index_ap_brec_twin){//// && (x_twin > 0.1)){//1e-3 is arbitrary - this is just supposed to be on while the temp difference is small.
     /* Early time steady state equation */    
     dHdlna = (1.+z)*pvecback[pba->index_bg_H_prime]/pvecback[pba->index_bg_H] * _c_ / _Mpc_over_m_;
     eps_twin =  Trad_twin * Hz / rate_gamma_b_twin;
@@ -3746,7 +3746,7 @@ int thermodynamics_derivs_twin(
     //printf("Compton term: %g\n",rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)));
     //printf("Tnow term: %g\n",-ptw->Tnow_twin);
     //printf("Derivative of matter temperature difference is %g\n",dy[ptv->index_ti_D_Tmat_twin]);
-    //printf("Twin matter photon temp difference is %g\n",Tmat_twin-Trad_twin);
+    //printf("Twin matter photon relative temp difference is %g\n",(Tmat_twin-Trad_twin)/Trad_twin);
     //printf("Energy transfer rate is %g\n",rate_gamma_b_twin);
   }
   else {    
@@ -3761,14 +3761,14 @@ int thermodynamics_derivs_twin(
     }*/
     if ((Trad_twin-Tmat_twin)/Trad_twin <2.5e-3){
     //printf("Hz/rate_gamma_b_twin = %g\n",Hz/rate_gamma_b_twin);
-    //printf("Redshift is %g\n",z);
+    //printf("Non-steady state: Redshift is %g\n",z);
     //printf("Twin ionization fraction is %g\n",x_twin);
     //printf("Matter temperature is %g\n",Tmat_twin);
     //printf("Adiabatic term: %g\n",2.*Tmat_twin/(1.+z));
     //printf("Compton term: %g\n",rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)));
     //printf("Tnow term: %g\n",-ptw->Tnow_twin);
     //printf("Derivative of matter temperature difference is %g\n",dy[ptv->index_ti_D_Tmat_twin]);
-    //printf("Twin matter photon temp difference is %g\n",Tmat_twin-Trad_twin);
+    //printf("Twin matter photon temp relative difference is %g\n",(Tmat_twin-Trad_twin)/Trad_twin);
     //printf("Energy transfer rate is %g\n",rate_gamma_b_twin);
     }
       /* + Other terms from photorecombination and -ionization cooling, Rayleigh scattering, Bremsstrahlung. NEED TO BE ADDED. CHECK */  
