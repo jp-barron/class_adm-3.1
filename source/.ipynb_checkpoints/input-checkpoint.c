@@ -2823,16 +2823,16 @@ int input_read_parameters_species(struct file_content * pfc,
              "You can only enter one of 'Delta_N_twin' or 'log10_Delta_N_twin'.");    
         
       if (flag1 == _TRUE_) {
-        class_test((param1 < 0.001) || (param1 > 1.),
+        /*class_test((param1 < 0.001) || (param1 > 1.),
               errmsg,
-               "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for Delta_N_twin = %e",param1);
+               "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for Delta_N_twin = %e",param1);*/
         pba->Delta_N_twin = param1;
         
       }
       else if (flag2 == _TRUE_) {
-        class_test((param2 < -3.) || (param2 > 0.),
+        /*class_test((param2 < -3.) || (param2 > 0.),
               errmsg,
-               "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for log10_Delta_N_twin = %e",param2);
+               "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for log10_Delta_N_twin = %e",param2);*/
         pba->Delta_N_twin = pow(10,param2);
       }
 

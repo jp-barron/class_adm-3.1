@@ -161,6 +161,69 @@ int hyrec_dx_H_dz(struct thermodynamics* pth, struct thermohyrec* phy, double x_
   return _SUCCESS_;
 }
 
+/* BEGIN #TWIN SECTOR */
+int hyrec_x2s(struct thermodynamics* pth, struct thermohyrec* phy, double x_H, double x_He, double xe, double nH, double z, double Hz, double Tmat, double Trad, double alpha, double me, double *x2s) {
+
+  /** Summary: */
+
+  /** - define local variables */
+  struct injection* pin = &(pth->in);
+  long iz = 0;
+  int model;
+  double Trad_phys;
+
+  /** - do tests */
+  class_test(MODEL == FULL, phy->error_message, "FULL mode is currently not allowed for HyRec-2");
+
+  /** - assign variables */
+  if (pth->has_exotic_injection == _TRUE_) {
+    phy->data->cosmo->inj_params->ion = pin->pvecdeposition[pin->index_dep_ionH]/nH/(_E_H_ion_*_eV_);
+    phy->data->cosmo->inj_params->exclya = pin->pvecdeposition[pin->index_dep_lya]/nH/(_E_H_lya_*_eV_);
+  }
+  else{
+    phy->data->cosmo->inj_params->ion = 0.;
+    phy->data->cosmo->inj_params->exclya = 0.;
+  }
+  if (pth->has_varconst == _TRUE_) {
+    phy->data->cosmo->fsR = alpha;
+    phy->data->cosmo->meR = me;
+  }
+  /* BEGIN #TWIN SECTOR */
+  if (pth->has_twin == _TRUE_) {
+    phy->data->cosmo->fsR = alpha;
+    phy->data->cosmo->meR = me;
+  }
+  /* END TWIN SECTOR */
+  Trad_phys = Trad*kBoltz;
+  if (pth->has_varconst == _TRUE_) {
+    Trad_phys /= phy->data->cosmo->fsR*phy->data->cosmo->fsR*phy->data->cosmo->meR; //According to 1705.03925
+  }
+    
+  if (pth->has_twin == _TRUE_) {
+    Trad_phys /= phy->data->cosmo->fsR*phy->data->cosmo->fsR*phy->data->cosmo->meR;
+  }
+    
+  if (Trad_phys > TR_MAX || Trad_phys <= TR_MIN || Tmat/Trad <= T_RATIO_MIN) { model = PEEBLES; }
+
+  /* BEGIN #TWIN SECTOR */
+  else if (phy->data->cosmo->fsR != 1. && pth->has_twin == _TRUE_){ model = EMLA2s2p;}//EMLA2s2p;}//Don't use correction function for radiative transfer effects in dark sector, because we can't rely on the linear approximation used to compute it. Rather neglect the effects entirely. 
+    
+  /* END TWIN SECTOR */
+  else { model = MODEL; }
+  /** - convert to correct units, and retrieve derivative */
+  *x2s = rec_x2s(phy->data, model, xe, x_H, nH*1e-6, Hz, Tmat*kBoltz, Trad*kBoltz);
+  /** - do error management */
+  if(phy->data->error != 0){
+    class_call_message(phy->error_message,"rec_x2s",phy->data->error_message);
+    return _FAILURE_;
+  }
+
+  return _SUCCESS_;
+}
+
+/* END TWIN SECTOR */
+
+
 /**
  * Calculate the derivative of the helium HeIII ionization fraction
  *

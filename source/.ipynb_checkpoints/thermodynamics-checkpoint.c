@@ -28,8 +28,8 @@
  *
  * -# thermodynamics_init at the beginning (but after background_init)
  * -# thermodynamics_at_z at any later time
- * -# thermodynamics_free at the end, when no more calls to thermodynamics_at_z are needed
- */
+ * -# thermodynamics_free at the end, when no more calls to thermodynamics_at_z are needed 
+ **/
 
 #include "thermodynamics.h"
 
@@ -201,8 +201,8 @@ int thermodynamics_at_z(
       /* note that m_H / mu = 1 + (m_H/m_He-1) Y_p + x_e (1-Y_p) */
       pvecthermo[pth->index_th_cb2_twin] = pvecthermo[pth->index_th_wb_twin] * 4. / 3.;
 
-      /* Calculate dkappa/dtau (dkappa/dtau = a n_e x_e sigma_T = a^{-2} n_e(today) x_e sigma_T in units of 1/Mpc) */
-      pvecthermo[pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * pth->n_e_twin * x0_twin * _sigma_twin * _Mpc_over_m_;
+      /* Calculate dkappa/dtau (dkappa/dtau = a n_e x_e sigma_T = a^{-2} n_e(today) x_e sigma_T in units of 1/Mpc) - at very early times there's no Rayleigh scattering so this expression is fine.*/
+      pvecthermo[pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * pth->n_e_twin * x0_twin * _sigma_twin * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) * _Mpc_over_m_;
       ///printf("dkappa_twin = %g\n",pvecthermo[pth->index_th_dkappa_twin]);
       //printf("dmu_idm_dr is %g\n",pvecthermo[pth->index_th_dmu_idm_dr]);
       //printf("x0_twin is %g\n",x0_twin);
@@ -649,7 +649,7 @@ int thermodynamics_helium_from_bbn(
     if (left[0] > 39) {
 
       /* if the line contains data, we must interpret it. If (num_omegab, num_deltaN)=(0,0), the current line must contain
-         their values. Otherwise, it must contain (omegab, delatN, YHe). */
+         their values. Otherwise, it must contain (omegab, deltaN, YHe). */
       if ((num_omegab==0) && (num_deltaN==0)) {
 
         /* read (num_omegab, num_deltaN), infer size of arrays and allocate them */
@@ -1143,6 +1143,7 @@ int thermodynamics_workspace_init(
   //printf("Radiation density is %g\n",pba->Omega0_g);
   /* H number density today in SI units*/
   ptw->SIunit_nH0 = 3.*ptw->SIunit_H0*ptw->SIunit_H0*pba->Omega0_b/(8.*_PI_*_G_*_m_H_)*(1.-ptw->YHe);
+  //printf("Hydrogen number density today is %g\n",ptw->SIunit_nH0);
   /* BEGIN #TWIN SECTOR */
   ptw->SIunit_nH0_twin = 3.*ptw->SIunit_H0*ptw->SIunit_H0*pba->Omega0_b_twin/(8.*_PI_*_G_*_m_H_twin)*(1.-ptw->YHe_twin); 
   //printf("Twin hydrogen density today = %g\n",ptw->SIunit_nH0_twin);
@@ -1250,7 +1251,7 @@ int thermodynamics_workspace_init(
 
   /* BEGIN #TWIN SECTOR */  
   class_alloc(ptw->ptdw->ap_z_limits_twin,ptw->ptdw->ap_size_twin*sizeof(double),pth->error_message);
-  double x_threshold_1, x_threshold_2,c1,c2,z_threshold_1,z_threshold_rad,z_threshold_choice,z_threshold_2,z_threshold_mat;
+  double x_threshold_1,c1,c2,z_threshold_1;
   x_threshold_1 = 0.999;
   //x_threshold_2 = 0.99;
   c1 = (x_threshold_1*x_threshold_1/(1-x_threshold_1))*ptw->SIunit_nH0_twin/exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin)); //Technically not right if Tmatter is different from Trad. 
@@ -1273,9 +1274,8 @@ int thermodynamics_workspace_init(
   //printf("Compton decoupling threshold z, assuming matter domination: %g\n",z_threshold_mat);
   //printf("Compton decoupling threshold z, assuming radiation domination: %g\n",z_threshold_rad);
   //printf("Saha z threshold is %g\n",z_threshold_1);
-  //printf("Boltzmann z threshold is %g\n",z_threshold_1);
+  printf("Boltzmann z threshold is %g\n",z_threshold_1);
   //printf("0.1 times binding energy is %g \n",0.099*ptw->const_Tion_H_twin/ptw->Tnow_twin -1);
-  z_threshold_choice = z_threshold_1;
   /*if (z_threshold_rad > z_threshold_1) {
         z_threshold_choice = z_threshold_rad;
         printf("Compton rate falls below Hubble before dark ionization fraction would start falling. Using z_dec as switch for Boltzmann evolution of dark sector.\n");
@@ -1292,7 +1292,7 @@ int thermodynamics_workspace_init(
         printf("Using T corresponding to 0.099*dark hydrogen binding energy as switch for Boltzmann evolution of dark sector.\n");
   }
   z_threshold_choice = 700;*/
-  ptw->z_H_twin_boltzmann_trigger = z_threshold_choice; //pth->z_threshold_twin;//z_threshold_2
+  ptw->z_H_twin_boltzmann_trigger = z_threshold_1;  //pth->z_threshold_twin; //z_threshold_choice; //z_threshold_2
   //ptw->z_H_twin_saha_trigger = z_threshold_1;//0.05 * ptw->const_Tion_H_twin/ptw->Tnow_twin - 1.;
   //ptw->z_He2_twin_trigger = 0.03 * ptw->const_Tion_HeI_twin/ptw->Tnow_twin - 1.;
   //ptw->z_He1f_twin_trigger = 0.01 * ptw->const_Tion_HeII_twin/ptw->Tnow_twin - 1.;
@@ -1334,12 +1334,12 @@ int thermodynamics_workspace_init(
   /* BEGIN #TWIN SECTOR */
   class_alloc(ptw->ptdw->ap_z_limits_delta_twin,ptw->ptdw->ap_size_twin*sizeof(double),pth->error_message);
 
-  ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_brec_twin] = 0.;
+  ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_brec_twin] = 50.;
   //ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_He1_twin] = 1;
   //ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_He1f_twin] = 1;
   //ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_He2_twin] = 1;
   //ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_H_twin] = 1; //50 seems to be ok for SM stuff. Check back again later. 
-  ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_frec_twin] = 1; //50 seems to be ok for SM stuff. 
+  ptw->ptdw->ap_z_limits_delta_twin[ptw->ptdw->index_ap_frec_twin] = 50; //50 seems to be ok for SM stuff. 
   /* END TWIN SECTOR */
   
   /* With recombination computed by HyRec or Recfast, we need to allocate and initialize the wrappers */
@@ -1380,6 +1380,46 @@ int thermodynamics_workspace_init(
 
     break;
   }
+  
+  /* BEGIN #TWIN SECTOR */
+  /* Loading in files for photoionization heating and photorecombination cooling rates */
+  FILE *fFpi; 
+  FILE *fFpr;
+  FILE *fToB;
+  FILE *fTMoTR;
+  class_open(fFpi,ppr->Fpi_file, "r",pth->error_message);
+  class_open(fFpr,ppr->Fpr_file, "r",pth->error_message);
+  class_open(fToB,ppr->ToB_file, "r",pth->error_message);
+  class_open(fTMoTR,ppr->TMoTR_file, "r",pth->error_message);
+  int i,j;
+  for (i = 0; i < 200; i++) {
+    fscanf(fFpi,"%le",&(ptw->ptdw->Fpi_tab[i]));
+    fscanf(fToB,"%le",&(ptw->ptdw->ToB_tab[i]));
+    for (j = 0; j < 40; j++) {
+      fscanf(fFpr, "%le", &(ptw->ptdw->Fpr_tab[i][j]));
+    }
+  }
+  for (i = 0; i < 40; i++){
+    fscanf(fTMoTR,"%le",&(ptw->ptdw->TMoTR_tab[i]));
+  }
+  fclose(fFpi);
+  fclose(fFpr);
+  fclose(fToB);
+  fclose(fTMoTR);
+
+  /*double my_test_val;
+  my_test_val = my_2D_interp(1e-7,1e-5,ptw->ptdw->ToB_tab,ptw->ptdw->TMoTR_tab,ptw->ptdw->Fpr_tab);
+  printf("Fpr(1e-7,1e-5) = %g\n",my_test_val);  
+  my_test_val = my_2D_interp(73,0.4923882,ptw->ptdw->ToB_tab,ptw->ptdw->TMoTR_tab,ptw->ptdw->Fpr_tab);
+  printf("Fpr(73,0.4923882) = %g\n",my_test_val);
+  my_test_val = my_2D_interp(80,0.4923882,ptw->ptdw->ToB_tab,ptw->ptdw->TMoTR_tab,ptw->ptdw->Fpr_tab);
+  printf("Fpr(80,0.4923882) = %g\n",my_test_val);  
+  my_test_val = my_2D_interp(200,0.4923882,ptw->ptdw->ToB_tab,ptw->ptdw->TMoTR_tab,ptw->ptdw->Fpr_tab);
+  printf("Fpr(200,0.4923882) = %g\n",my_test_val);
+  my_test_val = my_2D_interp(2000,0.4923882,ptw->ptdw->ToB_tab,ptw->ptdw->TMoTR_tab,ptw->ptdw->Fpr_tab);
+  printf("Fpr(2000,0.4923882) = %g\n",my_test_val);*/
+  /* END TWIN SECTOR */
+
 
   /** - Allocate reionisation parameter workspace */
   class_alloc(ptw->ptrp,
@@ -2184,7 +2224,8 @@ int thermodynamics_solve(
   for(index_ap_twin=0; index_ap_twin < ptw->ptdw->ap_size_twin-1; index_ap_twin++) {
     interval_limit_twin[index_ap_twin+1] = -ptw->ptdw->ap_z_limits_twin[index_ap_twin];
   }  
-
+  ptw->RLya_twin_min = 1e10;
+  ptw->dxdt_max = 0;
   for (index_interval_twin=0; index_interval_twin<interval_number_twin; index_interval_twin++) {
 
     ptw->ptdw->ap_current_twin = index_interval_twin;
@@ -2234,8 +2275,8 @@ int thermodynamics_solve(
   }  
   
   /* END TWIN SECTOR */
-  
-
+  //printf("Minimum twin RLya is %g, dx_twin/dt at that redshift is %g\n",ptw->RLya_twin_min,ptw->dxdt_at_RLya_min);
+  //printf("Maximum dx_twin/dt is %g\n",ptw->dxdt_max);
   /** - Compute reionization optical depth, if not supplied as input parameter */
   if (pth->reio_z_or_tau == reio_z) {
 
@@ -3498,6 +3539,84 @@ int thermodynamics_derivs(
 }
 
 /* BEGIN #TWIN SECTOR */
+/* Code to load in F_pi and F_pr and interpolate them */
+/* Copied from Hyrec. */
+/* Or should I just do this in hyrec? */
+
+
+/* END TWIN SECTOR */
+
+double my_1D_interp(double x, double * xi, double * yi){
+/* In this extremely specific case, which I can generalize later once it works, the list of values is of length 200 */
+  int i;
+  int idx;
+  idx = 0;
+  if (x <= xi[0]){
+    return 0.;
+  }
+  else if (x >= xi[199]){
+    return 0.;
+  }
+  else{
+    while (x > xi[idx]){
+    idx++;
+    }
+    return exp((log(yi[idx-1])*(log(xi[idx])-log(x))+log(yi[idx])*(log(x)-log(xi[idx-1])))/(log(xi[idx])-log(xi[idx-1])));
+  }
+
+}
+
+double my_2D_interp(double x, double y, double * xi, double * yi, double zi[200][40]){
+//In this extremely specific case, which I can generalize later once it works, the list of values is of length 200 
+  int i;
+  int j;
+  int idx_x;
+  int idx_y;
+  idx_x = 0;// x is TR/BD
+  idx_y = 0;// y is Tm/Tr 
+  
+  while (x > xi[idx_x]){
+    idx_x++;
+  }
+  while (y > yi[idx_y]){
+    idx_y++;
+  }
+
+  if (idx_x > 199){
+    idx_x = 199;
+  }
+  if (idx_y > 39){
+    idx_y = 39;
+  }
+
+  if ((x <= xi[0]) && (y<=yi[0])){
+    //printf("Bottom left\n");
+    return zi[idx_x][idx_y];
+  }
+
+  else if (x <= xi[0]){
+    //printf("Mid, top left\b");
+    return exp((log(zi[idx_x][idx_y-1])*(log(yi[idx_y])-log(y))+log(zi[idx_x][idx_y])*(log(y)-log(yi[idx_y-1])))/(log(yi[idx_y])-log(yi[idx_y-1])));
+  }
+  else if ((y<=yi[0]) || (y>=yi[39])){
+   // printf("Bottom and top mid, right\n");
+    return exp((log(zi[idx_x-1][idx_y])*(log(xi[idx_x])-log(x))+log(zi[idx_x][idx_y])*(log(x)-log(xi[idx_x-1])))/(log(xi[idx_x])-log(xi[idx_x-1])));
+  }
+  
+  else{
+   // printf("In good square\n");
+    return exp((log(zi[idx_x-1][idx_y-1])*(log(xi[idx_x])-log(x))*(log(yi[idx_y])-log(y))+ 
+                log(zi[idx_x][idx_y-1])*(log(x)-log(xi[idx_x-1]))*(log(yi[idx_y])-log(y))+
+                log(zi[idx_x-1][idx_y])*(log(xi[idx_x])-log(x))*(log(y)-log(yi[idx_y-1]))+
+                log(zi[idx_x][idx_y])*(log(x)-log(xi[idx_x-1]))*(log(y)-log(yi[idx_y-1])))/(log(xi[idx_x])-log(xi[idx_x-1]))/(log(yi[idx_y])-log(yi[idx_y-1])));
+  }
+
+}
+
+
+
+
+/* BEGIN #TWIN SECTOR */
 int thermodynamics_derivs_twin(
                           double mz,
                           double * y,
@@ -3513,8 +3632,14 @@ int thermodynamics_derivs_twin(
 
   /* Shorthand notations */
   double z,Hz,dHdlna,heat_capacity;
-  double x_twin,nH_twin,Trad_twin,Tmat_twin,x_H_twin,eps_twin,depsdlna_twin,rate_gamma_b_twin;//,x_He_twin
+  double x_twin,nH_twin,Trad_twin,Tmat_twin,x_H_twin,eps_twin,depsdlna_twin,rate_gamma_b_twin,eps_twin_compton,depsdlna_twin_compton;//,x_He_twin
+  double eps_twin_full;
+  double eps_twin_rayleigh;
+  double depsdlna_twin_rayleigh;
+  double eps_twin_freefree;
+  double depsdlna_twin_freefree;
   double rate_photorecombination, rate_photoionization, rate_freefree,rate_rayleigh,mu_D;
+  double x_2s;
   /* Shorthand notations for all of the structs */
   struct thermodynamics_parameters_and_workspace * ptpaw;
   struct precision * ppr;
@@ -3633,6 +3758,23 @@ int thermodynamics_derivs_twin(
                  ptw->ptdw->phyrec_twin->error_message,
                  error_message);
                  
+
+      //printf("x2s is %g\n",x_2s);        
+      //The following checks whether the n=2 to n=1 rates are much faster than the recombination rate, which is a necessary condition for the steady-state assumption that x2dot ~ 0. 
+     /* double RLya_twin, L2s1s_twin,dxdt;
+      RLya_twin = 4.662899067555897e15 * pow(pba->alphafs_dark*pba->alphafs_dark*pba->ratio_vev_twin/.00729735/.00729735,3)*Hz/nH_twin/1e-6/(1.-x_H_twin);
+      L2s1s_twin = 8.22 * pow(pba->alphafs_dark/.00729735,8)*(pba->ratio_vev_twin);
+      dxdt = -(1+z)*Hz*dy[ptv->index_ti_x_H_twin];
+      if (RLya_twin < ptw->RLya_twin_min){
+          ptw->RLya_twin_min = RLya_twin;
+          ptw->dxdt_at_RLya_min = dxdt;
+      }
+      if (dxdt < ptw->dxdt_max){//Since it's a negative number. 
+          ptw->dxdt_max = dxdt;
+      }*/
+      //printf("RLya = %g, Lambda2s1s = %g, dx/dt = %g",RLya_twin,L2s1s_twin,dxdt);
+
+                 
     //if ((1000 < z) && (z < 1100)){
        // printf("Redshift is %g \n",z);
         //printf("Derivative of ionization fraction is %g \n",dy[ptv->index_ti_x_H_twin]);
@@ -3641,7 +3783,9 @@ int thermodynamics_derivs_twin(
     printf("Derivative of twin ionization fraction is less than 0, = %g. redshift is %g. Ionization fraction is %g.\n",dy[ptv->index_ti_x_H_twin],z,x_twin);
     }*/
     }
-   
+    class_call(hyrec_x2s(pth,ptw->ptdw->phyrec_twin,x_H_twin,0.,x_twin,nH_twin,z,Hz,Tmat_twin,Trad_twin,pba->alphafs_dark/0.00729735,_m_e_twin/_m_e_,&(x_2s)),
+                 ptw->ptdw->phyrec_twin->error_message,
+                 error_message);
 
      /*Helium equations */
     //if (ptdw->require_He_twin == _TRUE_) {
@@ -3668,25 +3812,46 @@ int thermodynamics_derivs_twin(
   */
 
   /* Photon-Baryon temperature change rate  */
-  //rate_photorecombination = 0.;
-  //rate_photoionization = 0.;//pow(pba->alphafs_dark,3)*pow(Trad_twin,2)/(3*_PI_) * x2s * nH_twin * exp(-ptw->const_Tion_H_twin/(4*Trad_twin))*3973.6*pow(Trad_twin/ptw->const_Tion_H_twin,-0.0222)/pow((2.012 +pow(Trad_twin/ptw->const_Tion_H_twin,0.2412)),6.55);
-  //rate_freefree = 0.;
-  //mu_D = (_m_e_twin * pba->m_p_dark*_GeV_over_kg_)/(_m_e_twin + pba->m_p_dark*_GeV_over_kg_);//In kg 
+  mu_D = (_m_e_twin * pba->m_p_dark*_GeV_over_kg_)/(_m_e_twin + pba->m_p_dark*_GeV_over_kg_);//In kg 
+  
+//Load Fp-r array, ToB, TMoTR values. 
+  rate_photorecombination = 2*(pow(_h_P_/(2*_PI_),2)*sqrt(_k_B_))*2*pow(pba->alphafs_dark,3)*sqrt(2*_PI_*Tmat_twin)/(3*pow(mu_D,1.5)) * pow(x_twin,2) * pow(nH_twin,2) * my_2D_interp(Trad_twin/ptw->const_Tion_H_twin,Tmat_twin/Trad_twin,ptw->ptdw->ToB_tab,ptw->ptdw->TMoTR_tab,ptw->ptdw->Fpr_tab)/(3 * _k_B_ * nH_twin*(1.+x_twin+ptw->fHe_twin));// /Tmat_twin <- divide by Tmat_twin to get rate that matches plot;
+  
+  //rate_photoionization = 2*(pow(_k_B_,2)*2*_PI_/_h_P_)*(pow(pba->alphafs_dark,3)*pow(Trad_twin,2)/(3*_PI_)) * x_2s * nH_twin * exp(-ptw->const_Tion_H_twin/(4*Trad_twin))*3973.6*pow(Trad_twin/ptw->const_Tion_H_twin,-0.0222)/pow((2.012 +pow(Trad_twin/ptw->const_Tion_H_twin,0.2412)),6.55)/(3 * _k_B_ * (Trad_twin-Tmat_twin) * nH_twin*(1.+x_twin+ptw->fHe_twin));
+  rate_photoionization = 2*(pow(_k_B_,2)*2*_PI_/_h_P_)*(pow(pba->alphafs_dark,3)*pow(Trad_twin,2)/(3*_PI_)) * x_2s * nH_twin * exp(-ptw->const_Tion_H_twin/(4*Trad_twin))*my_1D_interp(Trad_twin/ptw->const_Tion_H_twin,ptw->ptdw->ToB_tab,ptw->ptdw->Fpi_tab)/(3 * _k_B_ * nH_twin*(1.+x_twin+ptw->fHe_twin));// /Tmat_twin <- divide by Tmat_twin to get rate that matches plot;
 
-  //rate_rayleigh = (2*_PI_*pow(_c_,3)*pow(_k_B_,8)/_h_P_)*430080. * 1.002008 * pow(pba->alphafs_dark,2) * nH_twin * (1-x_twin) * pow(Trad_twin,8)/(pow(_PI_,2) * pow(pow(pba->alphafs_dark,2)*mu_D*_c_*_c_/2.,4)*(_m_H_twin)*pow(_m_e_twin,2))/(3 * _k_B_ * nH_twin*(1.+x_twin+ptw->fHe_twin));//*(Trad_twin-Tmat_twin) Rate in SI multiplied by kB^9 c^3/hbar to get it in units of Joule/second/meter^3. 
+  rate_freefree = 2*(pow(_h_P_/(2*_PI_),2)*sqrt(_k_B_))*(16*pow(pba->alphafs_dark,3)*1.3*sqrt(2*_PI_*Tmat_twin)*pow(x_twin,2)*pow(nH_twin,2))/pow(3*mu_D,1.5)*(pow(_PI_,2)*((Trad_twin-Tmat_twin)/Trad_twin)*(1+2*(Trad_twin-Tmat_twin)/Trad_twin)-6*1.2020569*pow((Trad_twin-Tmat_twin)/Trad_twin,2))/6./(3 * _k_B_ * nH_twin*(1.+x_twin+ptw->fHe_twin));// *(Trad_twin/Tmat_twin)/(Trad_twin-Tmat_twin) <- divide by Tmat_twin and multiply by Trad_twin/(Trad_twin-Tmat_twin) to get rate that matches plot;
 
+  //if (Trad_twin/ptw->const_Tion_H_twin < .05){
+  rate_rayleigh = 2*(2*_PI_*pow(_k_B_,9)/_h_P_/pow(_c_,6))*430080. * 1.002008 * pow(pba->alphafs_dark,2) * nH_twin * (1-x_twin) * pow(Trad_twin,8) * (Trad_twin - Tmat_twin)/(pow(_PI_,2) * pow(pow(pba->alphafs_dark,2)*mu_D*_c_*_c_/2.,4)*(_m_H_twin)*pow(_m_e_twin,2))/(3 * _k_B_ * nH_twin*(1.+x_twin+ptw->fHe_twin));// * (Trad_twin/Tmat_twin)/(Trad_twin-Tmat_twin)<- divide by Tmat_twin and multiply by Trad_twin/(Trad_twin-Tmat_twin) to get rate that matches plot;
 
-  rate_gamma_b_twin = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pvecback[pba->index_bg_rho_g_twin] * _Jm3_over_Mpc2_ ) * x_twin / (1.+x_twin+ptw->fHe_twin);// + 2*(rate_photorecombination - rate_photoionization - rate_freefree + rate_rayleigh)/(3 * _k_B_ * nH_twin);
-  /*if (x_twin < 0.1){
-    printf("Redshift is %g \n",z);
-    printf("Temperature is %g Joules \n",Trad_twin * _k_B_);
-    printf("Binding energy is %g Joules \n",pow(pba->alphafs_dark,2)*mu_D*_c_*_c_/2.);
-    printf("Dark hydrogen number density is %g /m^3 \n",nH_twin);
-    printf("Reduced mass is %g kg\n",mu_D);
-    printf("Rayleigh rate is %g \n",rate_rayleigh);
+  //}
+  //else{
+  //rate_rayleigh=0.;
+  //}
+
+  rate_gamma_b_twin = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pvecback[pba->index_bg_rho_g_twin] * _Jm3_over_Mpc2_ ) * x_twin / (1.+x_twin+ptw->fHe_twin);
+  int random_num = rand() % 1000;
+  if (random_num > 995){//((z < 1e6) && (z > 5e5))
+   //printf("photorec1 = %g, photorec2 = %g \n",rate_photorecombination,rate_photoionization);
+    //printf("Binding energy in kelvin is %g \n",ptw->const_Tion_H_twin);
+    //printf("Radiation temperature in kelvin is %g \n",Trad_twin);
+    //printf("F_p-r is %g \n",my_2D_interp(Trad_twin/ptw->const_Tion_H_twin,Tmat_twin/Trad_twin,ptw->ptdw->ToB_tab,ptw->ptdw->TMoTR_tab,ptw->ptdw->Fpr_tab));
+    /*printf("Redshift is %g \n",z);
+    printf("Radiation temperature/binding energy is %g \n",Trad_twin/ptw->const_Tion_H_twin);
+    printf("Relative Temperature difference is %g  \n",(Trad_twin -Tmat_twin)/Trad_twin);
+    printf("Ionization fraction is %g\n",x_twin);
+    //printf("Binding energy is %g Joules \n",pow(pba->alphafs_dark,2)*mu_D*_c_*_c_/2.);
+    //printf("Dark hydrogen number density is %g /m^3 \n",nH_twin);
+    //printf("Reduced mass is %g kg\n",mu_D);
+    printf("Hubble rate is %g\n",Hz);
     printf("Compton rate is %g \n",rate_gamma_b_twin);
- 
-  }*/
+    printf("Photorecombination rate is %g\n",rate_photorecombination);
+    printf("Photoionization rate is %g\n",rate_photoionization);
+    printf("Free-free rate is %g\n",rate_freefree);
+    printf("Rayleigh rate is %g \n",rate_rayleigh);*/
+    //printf("%g %g %g %g %g %g %g\n",z,Hz,rate_gamma_b_twin,rate_photorecombination,rate_photoionization,rate_freefree,rate_rayleigh);
+  }
   if (pth->has_varconst == _TRUE_) {
     rate_gamma_b_twin *= rescale_rate;
   }
@@ -3721,57 +3886,88 @@ int thermodynamics_derivs_twin(
   * So, taking the derivative of the right hand side, we obtain dTm/dz = Tcmb - eps*(dln(eps)/dz)
   *
   * Now use the form of eps = Tr*e = H*(1+x+f)/(cT*Tr^3*x) to derive the remaining terms in the below formula
-  * => dln(eps)/dlna = dln(H)/dlna  - (1+f)/(1+x+f)*dln(x)/dlna + 3*dln(Tr)/dlna
+  * => dln(eps)/dlna = dln(H)/dlna  - (1+f)/(1+x+f)*dln(x)/dlna - 3*dln(Tr)/dlna
   *
   * We also approximate dln(x)/dlna << 1, since we are before HeIII recombination, thus finding
   * => dln(eps)/dlna ~ dln(H)/dlna + 3
   *
   * dD_Tmat/dz = d(-eps)/dz = - eps * dln(eps)/dz = eps *dln(eps)/dlna /(1.+z)
   **/
-
-  if ((Trad_twin-Tmat_twin)/Trad_twin <1e-3 || (x_twin > 0.1) || (ap_current_twin == ptdw->index_ap_brec_twin)) {//( ap_current_twin == ptdw->index_ap_brec_twin){//// && (x_twin > 0.1)){//1e-3 is arbitrary - this is just supposed to be on while the temp difference is small.
+  double z_switch;
+  z_switch=1e6;
+  double rhs_full;
+  rhs_full = 2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin;
+  if (fmax(fmax(rate_gamma_b_twin,rate_freefree*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin))),rate_rayleigh*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin))) > 2000.0*Hz ){//(z>z_switch){//((Trad_twin > 10 *ptw->const_Tion_H_twin) || (((rhs_full > 0.1) || (rhs_full < 0)) &&  (Trad_twin-Tmat_twin)/Trad_twin <1e-3)) {//(z>z_switch){//( || (x_twin > 0.1) || (ap_current_twin == ptdw->index_ap_brec_twin)) {// ||       ( ap_current_twin == ptdw->index_ap_brec_twin){//// && (x_twin > 0.1)){//1e-3 is arbitrary - this is just supposed to be on while the temp difference is small.
     /* Early time steady state equation */    
     dHdlna = (1.+z)*pvecback[pba->index_bg_H_prime]/pvecback[pba->index_bg_H] * _c_ / _Mpc_over_m_;
-    eps_twin =  Trad_twin * Hz / rate_gamma_b_twin;
-    //if (Hz/rate_gamma_b_twin > 0.01) {
-        //printf("Approximation that photon-baryon coupling is tight is bad.\n");
-    //}
-    depsdlna_twin = dHdlna/Hz + 3.;
-    /* Recfast v 1.5: add here a smoothing term as suggested by Adam Moss */
+    eps_twin_compton =  Trad_twin * Hz / rate_gamma_b_twin;
+    depsdlna_twin_compton = dHdlna/Hz + 3.;
+    
+    eps_twin_rayleigh = Trad_twin * (Trad_twin - Tmat_twin) * Hz / rate_rayleigh;
+    depsdlna_twin_rayleigh = dHdlna/Hz + 8.;
+    
+    eps_twin_freefree = Trad_twin * (Trad_twin - Tmat_twin) * Hz / rate_freefree;
+    depsdlna_twin_freefree = dHdlna/Hz + 1.5;
+    
+
+    
+    /*if ((fabs(eps_twin_rayleigh*depsdlna_twin_rayleigh) < fabs(eps_twin_compton*depsdlna_twin_compton)) && (fabs(eps_twin_rayleigh*depsdlna_twin_rayleigh) < fabs(eps_twin_freefree*depsdlna_twin_freefree))){
+      eps_twin = eps_twin_rayleigh;
+      depsdlna_twin = depsdlna_twin_rayleigh;
+    }
+    else if ((fabs(eps_twin_compton*depsdlna_twin_compton) < fabs(eps_twin_rayleigh*depsdlna_twin_rayleigh)) && (fabs(eps_twin_compton*depsdlna_twin_compton) < fabs(eps_twin_freefree*depsdlna_twin_freefree))){
+      eps_twin = eps_twin_compton;
+      depsdlna_twin = depsdlna_twin_compton;
+   }
+    else {
+      eps_twin = eps_twin_freefree;
+      depsdlna_twin = depsdlna_twin_freefree;
+   }*/
+    
+    
+    if (eps_twin_rayleigh*depsdlna_twin_rayleigh < eps_twin_compton*depsdlna_twin_compton){
+      eps_twin = eps_twin_rayleigh;
+      depsdlna_twin = depsdlna_twin_rayleigh;
+    }
+    else {
+      eps_twin = eps_twin_compton;
+      depsdlna_twin = depsdlna_twin_compton;
+   }
+
     dy[ptdw->ptv->index_ti_D_Tmat_twin] = eps_twin * depsdlna_twin / (1.+z);
-    //printf("Redshift is %g\n",z);
-    //printf("Twin ionization fraction is %g\n",x_twin);
-    //printf("Matter temperature is %g\n",Tmat_twin);
-    //printf("Adiabatic term: %g\n",2.*Tmat_twin/(1.+z));
-    //printf("Compton term: %g\n",rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)));
-    //printf("Tnow term: %g\n",-ptw->Tnow_twin);
-    //printf("Derivative of matter temperature difference is %g\n",dy[ptv->index_ti_D_Tmat_twin]);
-    //printf("Twin matter photon relative temp difference is %g\n",(Tmat_twin-Trad_twin)/Trad_twin);
-    //printf("Energy transfer rate is %g\n",rate_gamma_b_twin);
+    
+    //eps_twin_full = Trad_twin * Hz/ (rate_gamma_b_twin + (rate_photorecombination - rate_photoionization - rate_freefree + rate_rayleigh)/(Tmat_twin-Trad_twin));
+    if ((z < 1.1*z_switch)){
+    //printf("Redshift: %g, RHS Compton only: %g, RHS Rayleigh only: %g\n",z,eps_twin * depsdlna_twin / (1.+z),eps_twin_rayleigh * depsdlna_twin_rayleigh / (1.+z));
+    //printf("1. Redshift: %g, Hubble: %g, x2s: %g, x_e: %g, Tmat: %g, Trad: %g, epsilon: %g, Tmat steady: %g, RHS approx: %g, RHS full: %g, adiabatic term: %g, compton term: %g, photorec term: %g, photoion term: %g, free-free term: %g, Rayleigh term: %g\n",z,Hz,x_2s,x_twin,Tmat_twin,Trad_twin, (Trad_twin-Tmat_twin)/Trad_twin, Trad_twin - eps_twin,eps_twin * depsdlna_twin / (1.+z),2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin,2.*Tmat_twin/(1.+z)- ptw->Tnow_twin,rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)),(rate_photorecombination)/(Hz*(1.+z)),-rate_photoionization/(Hz*(1.+z)),-rate_freefree/(Hz*(1.+z)),-rate_rayleigh/(Hz*(1.+z)));
+     //printf("1. Redshift: %g, DeltaT: %g, epsilon: %g, RHS QSS compton: %g, RHS QSS free-free: %g, RHS QSS rayleigh: %g, RHS full: %g\n",z,(Trad_twin-Tmat_twin),(Trad_twin-Tmat_twin)/Trad_twin,eps_twin_compton * depsdlna_twin_compton / (1.+z),eps_twin_freefree * depsdlna_twin_freefree / (1.+z),eps_twin_rayleigh * depsdlna_twin_rayleigh / (1.+z),2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin);
+     //printf("1. Redshift: %g, xe: %g, epsilon: %g, Hubble: %g, Compton rate: %g, Free-free rate: %g, Rayleigh rate: %g, Max rate: %g\n",z,x_twin,(Trad_twin-Tmat_twin)/Trad_twin,Hz,rate_gamma_b_twin,rate_freefree*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin)),rate_rayleigh * (Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin)),fmax(fmax(rate_gamma_b_twin,rate_freefree*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin))),rate_rayleigh*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin))));
+     
+    }
+    
+
   }
   else {    
     dy[ptv->index_ti_D_Tmat_twin] =
-      + 2.*Tmat_twin/(1.+z)                                                          /* Adiabatic expansion */
-      + rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))                                /* Coupling to photons*/
-      - ptw->Tnow_twin;
-    /*if ((25000 < z) && (z < 25010)){
-        printf("Redshift is %g \n",z);
-        printf("Photon energy density is %g in J/m^3 \n",pvecback[pba->index_bg_rho_g_twin] * _Jm3_over_Mpc2_);
-        printf("Rate is %g \n",( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pvecback[pba->index_bg_rho_g_twin] * _Jm3_over_Mpc2_ ));
-    }*/
-    if ((Trad_twin-Tmat_twin)/Trad_twin <2.5e-3){
-    //printf("Hz/rate_gamma_b_twin = %g\n",Hz/rate_gamma_b_twin);
-    //printf("Non-steady state: Redshift is %g\n",z);
-    //printf("Twin ionization fraction is %g\n",x_twin);
-    //printf("Matter temperature is %g\n",Tmat_twin);
-    //printf("Adiabatic term: %g\n",2.*Tmat_twin/(1.+z));
-    //printf("Compton term: %g\n",rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)));
-    //printf("Tnow term: %g\n",-ptw->Tnow_twin);
-    //printf("Derivative of matter temperature difference is %g\n",dy[ptv->index_ti_D_Tmat_twin]);
-    //printf("Twin matter photon temp relative difference is %g\n",(Tmat_twin-Trad_twin)/Trad_twin);
-    //printf("Energy transfer rate is %g\n",rate_gamma_b_twin);
-    }
-      /* + Other terms from photorecombination and -ionization cooling, Rayleigh scattering, Bremsstrahlung. NEED TO BE ADDED. CHECK */  
+      + 2.*Tmat_twin/(1.+z)                                                        
+      + rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))                            
+      + (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))//rate_photorecombination-rate_photoionization
+      - ptw->Tnow_twin; 
+    eps_twin_compton =  Trad_twin * Hz / rate_gamma_b_twin;
+    depsdlna_twin_compton = dHdlna/Hz + 3.;
+    
+    eps_twin_rayleigh = Trad_twin * (Trad_twin - Tmat_twin) * Hz / rate_rayleigh;
+    depsdlna_twin_rayleigh = dHdlna/Hz + 8.;
+    
+    eps_twin_freefree = Trad_twin * (Trad_twin - Tmat_twin) * Hz / rate_freefree;
+    depsdlna_twin_freefree = dHdlna/Hz + 1.5;
+
+
+    if (z > 0.9*z_switch){
+    //printf("2. Redshift: %g, Hubble: %g, x2s: %g, x_e: %g, Tmat: %g, Trad: %g, epsilon: %g, Tmat steady: %g, RHS approx: %g, RHS full: %g, adiabatic term: %g, compton term: %g, photorec term: %g, photoion term: %g, free-free term: %g, Rayleigh term: %g\n",z,Hz,x_2s,x_twin,Tmat_twin,Trad_twin, (Trad_twin-Tmat_twin)/Trad_twin, Trad_twin - eps_twin,eps_twin * depsdlna_twin / (1.+z),2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin,2.*Tmat_twin/(1.+z)- ptw->Tnow_twin,rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)),(rate_photorecombination)/(Hz*(1.+z)),-rate_photoionization/(Hz*(1.+z)),-rate_freefree/(Hz*(1.+z)),-rate_rayleigh/(Hz*(1.+z)));
+    // printf("2. Redshift: %g, DeltaT: %g, epsilon: %g, RHS QSS compton: %g, RHS QSS free-free: %g, RHS QSS rayleigh: %g, RHS full: %g\n",z,(Trad_twin-Tmat_twin),(Trad_twin-Tmat_twin)/Trad_twin,eps_twin_compton * depsdlna_twin_compton / (1.+z),eps_twin_freefree * depsdlna_twin_freefree / (1.+z),eps_twin_rayleigh * depsdlna_twin_rayleigh / (1.+z),2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin);
+     //printf("2. Redshift: %g, xe: %g, epsilon: %g, Hubble: %g, Compton rate: %g, Free-free rate: %g, Rayleigh rate: %g, Max rate: %g\n",z,x_twin,(Trad_twin-Tmat_twin)/Trad_twin,Hz,rate_gamma_b_twin,rate_freefree*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin)),rate_rayleigh * (Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin)),fmax(fmax(rate_gamma_b_twin,rate_freefree*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin))),rate_rayleigh*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin))));
+       } 
   }
 
     //if (pth->has_exotic_injection == _TRUE_) {
@@ -4127,8 +4323,15 @@ int thermodynamics_sources_twin(
   /* cb2_twin = (k_B/mu) Tb (1-1/3 dlnTb/dlna) = (k_B/mu) Tb (1+1/3 (1+z) dlnTb/dz) */
   pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_cb2_twin] = _k_B_ / ( _c_ * _c_ * _m_H_twin ) * (1. + (1./_not4_ - 1.) * ptw->YHe_twin + x_twin * (1.-ptw->YHe_twin)) * Tmat_twin* (1. + (1.+z) * dTmat_twin / Tmat_twin / 3.);
         
-  /* dkappa/dtau_twin = a n_e x_e sigma_T = a^{-2} n_e(today) x_e sigma_T (in units of 1/Mpc) */
-  pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * x_twin * _sigma_twin * _Mpc_over_m_;
+  /* dkappa/dtau_twin = a n_e x_e sigma_T = a^{-2} n_e(today) x_e sigma_T (in units of 1/Mpc) + contribution from Rayleigh scattering at low TD/BD*/
+  if (Trad_twin/ptw->const_Tion_H_twin < 0.05){
+    pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * x_twin * _sigma_twin * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) * _Mpc_over_m_ + (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * (1-x_twin) * _sigma_twin * _Mpc_over_m_ * pow(Trad_twin/ptw->const_Tion_H_twin,4);
+
+  }
+  else{
+    pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * x_twin * _sigma_twin * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) * _Mpc_over_m_;
+
+  }
   
   /*if (pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin]<0){
       printf("The value of dkappa_twin going into the table is negative, it is %g\n",pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin]);

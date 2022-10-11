@@ -109,6 +109,7 @@ double rec_TLA_dxHIIdlna(REC_COSMOPARAMS *cosmo, double xe, double xHII, double 
   if (-nH*(s*(1.-xHII)*DalphaB + Dxe2*alphaB_TM)*C/H + (cosmo->inj_params->ion + (1.-C)*cosmo->inj_params->exclya)/H > 0){
       printf("Derivative of ionization fraction computed with Peebles is <0. Matter temperature is %g, radiation temprature is %g",TM,TR);
   }*/
+  //printf("RLya in Hyrec is %g\n",RLya);
   return -nH*(s*(1.-xHII)*DalphaB + Dxe2*alphaB_TM)*C/H + (cosmo->inj_params->ion + (1.-C)*cosmo->inj_params->exclya)/H;
   
 
@@ -546,10 +547,93 @@ double rec_HMLA_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, double nH, d
   s    = SAHA_FACT(fsR, meR) *TR*sqrt(TR) *exp(-EI/TR)/nH;
   Dxe2 = xe*xHII - s*(1.-xHII); /* xe^2 - xe^2[Saha eq with 1s] -- gives more compact expressions */
 
+  //x2s = (nH*xe*xe*Alpha[0]-(1.-xe)*exp(-0.75*EI/TR)*Beta[0])/(Gamma_2s - R2s2p*R2p2s/Gamma_2p) + (R2p2s/Gamma_2s)*(nH*xe*xe*Alpha[1]-3*(1.-xe)*exp(-0.75*EI/TR)*Beta[1])/(Gamma_2p-R2p2s*R2s2p/Gamma_2s) ; 
+    
+    
   return -nH/H *( (s*(1.-xHII)*DAlpha[0] + Alpha[0]*Dxe2)*C2s + (s*(1.-xHII)*DAlpha[1] + Alpha[1]*Dxe2)*C2p )
          + (cosmo->inj_params->ion + (0.25*(1.-C2s) + 0.75*(1.-C2p))*cosmo->inj_params->exclya)/H ;
 
 }
+
+
+/* BEGIN #TWIN SECTOR. Added by Jared Barron, September 2022, in order to evaluate non-Compton scattering rates for atomic dark matter temperature evolution, x2s is needed */
+double rec_HMLA_x2s(HYREC_DATA *data, double xe, double xHII, double nH, double H, double TM, double TR) {
+  REC_COSMOPARAMS *cosmo = data->cosmo;
+  HYREC_ATOMIC *atomic = data->atomic;
+  int *error = &data->error;
+  double fsR = cosmo->fsR, meR = cosmo->meR;
+
+  double Alpha[2], DAlpha[2], Beta[2], R2p2s, RLya;
+  double Gamma_2s, Gamma_2p, C2s, C2p, s, Dxe2;
+  double ratio;
+  char sub_message[128];
+  if (*error == 1) return 0.;
+  ratio = TM/TR;
+  rescale_T(&TR, fsR, meR);
+  TM = ratio * TR;   /* This way ensure that TM<=TR is preserved */
+  interpolate_rates(Alpha, DAlpha, Beta, &R2p2s, TR, TM/TR, atomic, fsR, meR, error, data->error_message);
+  if (*error == 1) {
+    sprintf(sub_message, "  called from rec_x2s\n");
+    strcat(data->error_message, sub_message);
+    return 0.;
+  }
+
+  RLya = LYA_FACT(fsR, meR) *H/nH/(1.-xHII);   /* 8 PI H/(3 nH x1s lambda_Lya^3) */
+
+  /* Effective inverse lifetimes of 2s and 2p states */
+  Gamma_2s = Beta[0] + 3.*R2p2s + L2s_rescaled(fsR, meR);
+  Gamma_2p = Beta[1] + R2p2s + RLya;
+
+  return (nH*xe*xe*Alpha[0]-(1.-xe)*exp(-0.75*EI/TR)*Beta[0])/(Gamma_2s - 3*R2p2s*R2p2s/Gamma_2p) + (R2p2s/Gamma_2s)*(nH*xe*xe*Alpha[1]-3*(1.-xe)*exp(-0.75*EI/TR)*Beta[1])/(Gamma_2p-3*R2p2s*R2p2s/Gamma_2s) + (1-xe)*exp(-0.75*EI/TR);
+
+}
+
+double rec_TLA_x2s(REC_COSMOPARAMS *cosmo, double xe, double xHII, double nH, double H, double TM, double TR, double Fudge) {
+
+  double RLya, alphaB_TM, alphaB_TR, four_betaB;
+  double fsR = cosmo->fsR, meR = cosmo->meR;
+
+  rescale_T(&TM, fsR, meR);
+  rescale_T(&TR, fsR, meR);
+
+  RLya       = LYA_FACT(fsR, meR) * H / nH / (1.-xHII);
+  alphaB_TM  = Fudge * alphaB_PPB(TM, fsR, meR);
+  alphaB_TR  = Fudge * alphaB_PPB(TR, fsR, meR);
+
+  four_betaB = SAHA_FACT(fsR, meR) *TR*sqrt(TR) *exp(-0.25*EI/TR) * alphaB_TR;
+  /* Assume equilibrium between 2s and 2p, such that x2s = x2p/3, = x2/4*/
+  return (nH*xe*xe*alphaB_TM + (3*RLya + L2s_rescaled(fsR,meR))*(1.-xe)*exp(-0.75*EI/TR))/(four_betaB + 3*RLya+L2s_rescaled(fsR,meR));
+
+}
+
+double rec_x2s(HYREC_DATA *data, int model, double xe, double xHII, double nH, double H, double TM, double TR){
+  REC_COSMOPARAMS * cosmo = data->cosmo;
+  int *error = &data->error;
+  double result;
+  char sub_message[128];
+
+  if (*error == 1) return 0.;
+  if      (model == PEEBLES)  result = rec_TLA_x2s(cosmo, xe, xHII, nH, H, TM, TR, 1.0);
+  else if (model == RECFAST)  result = rec_TLA_x2s(cosmo, xe, xHII, nH, H, TM, TR, 1.14);
+  else if (model == EMLA2s2p) result = rec_HMLA_x2s(data, xe, xHII, nH, H, TM, TR);
+
+  else {
+    sprintf(sub_message, "Error in rec_x2s: model = %i is undefined.\n", model);
+    strcat(data->error_message, sub_message);
+    *error = 1;
+    return 0.;
+  }
+
+  if (*error == 1) {
+    sprintf(sub_message, "  called from rec_x2s\n");
+    strcat(data->error_message, sub_message);
+    return 0.;
+  }
+  return result;
+}
+
+
+/* END TWIN SECTOR */
 
 /********************************************************************************************************
 Compute the A_{b,b+/-1} "Einstein A-"coefficients between virtual states, due to diffusion

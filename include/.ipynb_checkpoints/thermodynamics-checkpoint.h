@@ -455,6 +455,10 @@ struct thermo_diffeq_workspace {
   double * ap_z_limits_delta_twin; /**< vector storing smoothing deltas of each approximation */    
   int require_H_twin;  /** in given approximation scheme, do we need to integrate hydrogen ionization fraction? */
   int require_He_twin; /** in given approximation scheme, do we need to integrate helium ionization fraction? */
+  double Fpr_tab[200][40]; /* Table of values of photorecombination atomic physics function */
+  double Fpi_tab[200]; /* List of values of photoionization atomic physics function */
+  double ToB_tab[200]; /* List of values of TR/B_D that F_pi and F_pr are evaluated at*/
+  double TMoTR_tab[40]; /* List of values of T_m/T_R that F_pr is evaluated at */
   /* END TWIN SECTOR */
     
   struct thermo_vector * ptv;       /**< pointer to vector of integrated quantities and their time-derivatives */
@@ -543,8 +547,11 @@ struct thermo_workspace {
   double z_He1_twin_trigger;         /**< Redshift where twin HeII->HeI should start being evolved with Saha equation **/
   //double z_He1f_twin_trigger;
   double z_He2_twin_trigger;         /**< Redshift where twin HeIII->HeII should start being evolved with Saha equation **/
+  double RLya_twin_min;
+  double dxdt_at_RLya_min;
+  double dxdt_max;
   /* END TWIN SECTOR */
-
+  
   struct thermo_diffeq_workspace * ptdw;        /**< pointer to workspace for differential equations */
   struct thermo_reionization_parameters * ptrp; /**< pointer to workspace for reionization */
 
@@ -762,6 +769,8 @@ extern "C" {
                                           struct thermo_workspace * ptw,
                                           int current_ap_twin
                                           );
+  double my_1D_interp(double x, double * xi, double * yi);
+  double my_2D_interp(double x, double y, double * xi, double * yi, double zi[200][40]);
   /** END TWIN SECTOR */
 
 

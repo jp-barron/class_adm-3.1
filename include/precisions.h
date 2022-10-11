@@ -113,6 +113,16 @@ class_string_parameter(sBBN_file,"/external/bbn/sBBN_2017.dat","sBBN file")
 class_string_parameter(sBBN_twin_file,"/external/bbn/sBBN_twin.dat","sBBN_twin file")
 /** END TWIN SECTOR */
 
+/* BEGIN #TWIN SECTOR */
+/* Files that contain values of F_p-i and F_p-r, atomic physics functions needed for computing matter temperature evolution */
+class_string_parameter(Fpr_file,"/external/DarkAtomicPhysics/A_cool_wo1s.dat","Fpr file")
+class_string_parameter(Fpi_file,"/external/DarkAtomicPhysics/B_heat_250.dat","Fpi file")  
+class_string_parameter(ToB_file,"/external/DarkAtomicPhysics/ToB.dat","ToB file")    
+class_string_parameter(TMoTR_file,"/external/DarkAtomicPhysics/TMoTR.dat","TMoTR file")    
+
+/* END TWIN SECTOR */
+    
+    
 /*
  *  Thermodynamical quantities
  */
@@ -121,9 +131,9 @@ class_string_parameter(sBBN_twin_file,"/external/bbn/sBBN_twin.dat","sBBN_twin f
  * The initial z for the recfast calculation of the recombination history
  */
 class_precision_parameter(thermo_z_initial,double,5.e6)
-class_precision_parameter(thermo_z_initial_if_idm_dr,double,1.e9)
+class_precision_parameter(thermo_z_initial_if_idm_dr,double,1.e11)
 /* BEGIN #TWIN SECTOR */
-class_precision_parameter(thermo_z_initial_if_twin,double,1.e9)
+class_precision_parameter(thermo_z_initial_if_twin,double,1.e11)
 /* END TWIN SECTOR */
 
 /**

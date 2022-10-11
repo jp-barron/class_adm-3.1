@@ -201,6 +201,15 @@ void interpolate_rates(double Alpha[2], double DAlpha[2], double Beta[2], double
                        HYREC_ATOMIC *atomic, double fsR, double meR, int *error, char error_message[SIZE_ErrorM]);
 double rec_swift_hyrec_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, double nH, double Hubble, double TM, double TR, double z);
 double rec_HMLA_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, double nH, double H, double TM, double TR);
+
+/* BEGIN #TWIN SECTOR */
+double rec_x2s(HYREC_DATA *data, int model, double xe, double xHII, double nH, double H, double TM, double TR);
+double rec_TLA_x2s(REC_COSMOPARAMS *cosmo, double xe, double xHII, double nH, double H, double TM, double TR, double Fudge);
+double rec_HMLA_x2s(HYREC_DATA *datas, double xe, double xHII, double nH, double H, double TM, double TR);
+
+/* END TWIN SECTOR */
+
+
 void populate_Diffusion(double *Aup, double *Adn, double *A2p_up, double *A2p_dn,
                         double TM, double Eb_tab[NVIRT], double A1s_tab[NVIRT]);
 void populateTS_2photon(double Trr[2][2], double *Trv[2], double *Tvr[2], double *Tvv[3],
@@ -218,6 +227,7 @@ void fplus_from_fminus(double fplus[NVIRT], double fplus_Ly[], double **Dfminus_
 double rec_HMLA_2photon_dxedlna(HYREC_DATA *data, double xe, double nH, double H, double TM, double TR, unsigned iz, double z);
 double rec_dxHIIdlna(HYREC_DATA *data, int model, double xe, double xHII, double nH, double H, double TM, double TR,
                      unsigned iz, double z);
+
 
 
 /************ SWITCHES FOR RADIATIVE TRANSFER. ALL SWITCHES SET TO 1 ARE THE DEFAULT MODEL  ************/
