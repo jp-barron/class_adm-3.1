@@ -1194,6 +1194,13 @@ cdef class Class:
     def Neff(self):
         return self.ba.Neff
 
+    #BEGIN #TWIN SECTOR
+    def z_rec_twin(self):
+        return self.th.z_rec_twin
+    
+    def tau_rec_twin(self):
+        return self.th.tau_rec_twin
+    #END TWIN SECTOR 
     def k_eq(self):
         self.compute(["background"])
         return self.ba.a_eq*self.ba.H_eq
@@ -1818,6 +1825,12 @@ cdef class Class:
                 value = self.ba.Omega0_ncdm_tot*self.ba.h*self.ba.h*93.14
             elif name == 'Neff':
                 value = self.ba.Neff
+            #BEGIN #TWIN SECTOR 
+            elif name == 'z_rec_twin':
+                value = self.th.z_rec_twin
+            elif name == 'tau_rec_twin':
+                value = self.th.tau_rec_twin
+            #END TWIN SECTOR
             elif name == 'Omega_m':
                 value = self.ba.Omega0_m
             elif name == 'omega_m':

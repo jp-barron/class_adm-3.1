@@ -100,8 +100,8 @@ int thermodynamics_hyrec_free(struct thermohyrec* phy){
  * @param dx_H_dz        Output: change in ionization fraction of hydrogen HII
  * @return the error status
  */
-int hyrec_dx_H_dz(struct thermodynamics* pth, struct thermohyrec* phy, double x_H, double x_He, double xe, double nH, double z, double Hz, double Tmat, double Trad, double alpha, double me, double *dx_H_dz) {
-
+int hyrec_dx_H_dz(struct thermodynamics* pth, struct thermohyrec* phy, double x_H, double x_He, double xe, double nH, double z, double Hz, double Tmat, double Trad, double alphaR, double meR, double *dx_H_dz) {
+  /* For twin sector: meR should really be reduced mass ratio mu_D/mu_SM */
   /** Summary: */
 
   /** - define local variables */
@@ -123,13 +123,13 @@ int hyrec_dx_H_dz(struct thermodynamics* pth, struct thermohyrec* phy, double x_
     phy->data->cosmo->inj_params->exclya = 0.;
   }
   if (pth->has_varconst == _TRUE_) {
-    phy->data->cosmo->fsR = alpha;
-    phy->data->cosmo->meR = me;
+    phy->data->cosmo->fsR = alphaR;
+    phy->data->cosmo->meR = meR;
   }
   /* BEGIN #TWIN SECTOR */
   if (pth->has_twin == _TRUE_) {
-    phy->data->cosmo->fsR = alpha;
-    phy->data->cosmo->meR = me;
+    phy->data->cosmo->fsR = alphaR;
+    phy->data->cosmo->meR = meR;
   }
   /* END TWIN SECTOR */
   Trad_phys = Trad*kBoltz;
@@ -162,7 +162,7 @@ int hyrec_dx_H_dz(struct thermodynamics* pth, struct thermohyrec* phy, double x_
 }
 
 /* BEGIN #TWIN SECTOR */
-int hyrec_x2s(struct thermodynamics* pth, struct thermohyrec* phy, double x_H, double x_He, double xe, double nH, double z, double Hz, double Tmat, double Trad, double alpha, double me, double *x2s) {
+int hyrec_x2s(struct thermodynamics* pth, struct thermohyrec* phy, double x_H, double x_He, double xe, double nH, double z, double Hz, double Tmat, double Trad, double alphaR, double meR, double *x2s) {
 
   /** Summary: */
 
@@ -185,13 +185,13 @@ int hyrec_x2s(struct thermodynamics* pth, struct thermohyrec* phy, double x_H, d
     phy->data->cosmo->inj_params->exclya = 0.;
   }
   if (pth->has_varconst == _TRUE_) {
-    phy->data->cosmo->fsR = alpha;
-    phy->data->cosmo->meR = me;
+    phy->data->cosmo->fsR = alphaR;
+    phy->data->cosmo->meR = meR;
   }
   /* BEGIN #TWIN SECTOR */
   if (pth->has_twin == _TRUE_) {
-    phy->data->cosmo->fsR = alpha;
-    phy->data->cosmo->meR = me;
+    phy->data->cosmo->fsR = alphaR;
+    phy->data->cosmo->meR = meR;
   }
   /* END TWIN SECTOR */
   Trad_phys = Trad*kBoltz;
@@ -210,7 +210,7 @@ int hyrec_x2s(struct thermodynamics* pth, struct thermohyrec* phy, double x_H, d
     
   /* END TWIN SECTOR */
   else { model = MODEL; }
-  /** - convert to correct units, and retrieve derivative */
+  /** - convert to correct units, and retrieve x2s*/
   *x2s = rec_x2s(phy->data, model, xe, x_H, nH*1e-6, Hz, Tmat*kBoltz, Trad*kBoltz);
   /** - do error management */
   if(phy->data->error != 0){

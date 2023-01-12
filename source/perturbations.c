@@ -6025,11 +6025,11 @@ int perturbations_approximations(
 
       class_test(tau_c < 0.,
                  ppt->error_message,
-                 "tau_c = 1/kappa' should always be positive unless there is something wrong in the thermodynamics module. However you have here tau_c=%e at z=%e, conformal time=%e x_e=%e. (This could come from the interpolation of a too poorly sampled reionisation history?). r_all_twin=%g,Delta_N_twin=%g. \n",
+                 "tau_c = 1/kappa' should always be positive unless there is something wrong in the thermodynamics module. However you have here tau_c=%e at z=%e, conformal time=%e x_e=%e. (This could come from the interpolation of a too poorly sampled reionisation history?). r_all_twin=%g,Delta_N_twin=%g, m_p=%g,m_e=%g,alpha_d=%g. \n",
                  tau_c,
                  1./ppw->pvecback[pba->index_bg_a]-1.,
                  tau,
-                 ppw->pvecthermo[pth->index_th_xe],pba->r_all_twin,pba->Delta_N_twin);
+                 ppw->pvecthermo[pth->index_th_xe],pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
 
       /** - ----> (b.2.b) check whether tight-coupling approximation should be on */
 

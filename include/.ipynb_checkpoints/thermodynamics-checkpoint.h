@@ -438,7 +438,7 @@ struct thermo_diffeq_workspace {
   double x_noreio_twin;   /**< Twin electron ionization fraction, not taking into account reionization - no twin reionization */
 
   double x_twin;          /**< total twin ionization fraction following usual CMB convention, n_free_twin/n_H_twin = x_H_twin + fHe_twin * x_He_twin; */
-
+  double x_2s_twin;       /* Fraction of twin electrons in 2s state */
   double Tmat_twin;       /**< Twin matter temperature */
   /* Additional indices of approximation schemes for the thermal history including the dark sector */
   int index_ap_brec_twin;
@@ -840,12 +840,13 @@ extern "C" {
 //@}
 
 /** START #TWIN SECTOR: April 26 redefined sigma-twin and m_H_twin for adm. */
-#define _m_H_twin (pba->m_e_dark*_GeV_over_kg_ + pba->m_p_dark*_GeV_over_kg_ -0.5 * pba->m_e_dark*_GeV_over_kg_ * pba->alphafs_dark * pba->alphafs_dark) /** Dark H mass*/
+#define _mu_twin_ (pba->m_e_dark*_GeV_over_kg_*pba->m_p_dark*_GeV_over_kg_)/((pba->m_e_dark*_GeV_over_kg_) + (pba->m_p_dark*_GeV_over_kg_)) /** Dark reduced mass */
+#define _m_H_twin (pba->m_e_dark*_GeV_over_kg_ + pba->m_p_dark*_GeV_over_kg_ -0.5 * _mu_twin_ * pba->alphafs_dark * pba->alphafs_dark) /** Dark H mass*/
 #define _m_e_twin (_m_e_*pba->ratio_vev_twin) /** Twin electron mass*/
 #define _epsilon0_perm_ 8.8541878128e-12 /** Vacuum Permittivity*/
 #define _sigma_twin  (_sigma_*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735)/pow(pba->ratio_vev_twin,2)) /**< Twin Thomson cross-section in m^2 */
-#define _Z_REC_MIN_twin 1000. /* CHECK */
-#define _L_H_ion_twin (1.096787737e7*pba->ratio_vev_twin*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735))
+#define _Z_REC_MIN_twin 1.0 /* CHECK */
+#define _L_H_ion_twin (1.096787737e7*(_mu_twin_/_m_e_)*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735))
 #define _L_He1_ion_twin (1.98310772e7*pba->ratio_vev_twin*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735))
 #define _L_He2_ion_twin (4.389088863e7*pba->ratio_vev_twin*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735))
 /** END TWIN SECTOR */

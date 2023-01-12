@@ -2750,6 +2750,9 @@ int input_read_parameters_species(struct file_content * pfc,
     pba->m_p_dark = param1;
   }
   else if (flag2 == _TRUE_){
+    if (param2 < -1.0){
+        printf("Log10_mp is apparently = %g. It shouldn't be.\n",param2);
+    }
     pba->m_p_dark = pow(10,param2);
   }
     
@@ -2776,17 +2779,14 @@ int input_read_parameters_species(struct file_content * pfc,
     pba->m_e_dark = pow(10,param2);
   }
   else if (flag3 == _TRUE_){
+    if (param3 > -1.0){
+      printf("Log10_memp_ratio is apparently = %g. It shouldn't be.\n",param3);
+    }
+
     pba->m_e_dark = pow(10,param3)*pba->m_p_dark;
   }
 
-  class_call(parser_read_double(pfc,"alphafs_dark",&param1,&flag1,errmsg),
-              errmsg,
-              errmsg);
-        class_test((param1 < 0.) || (param1 > 1),
-              errmsg,
-               "The dark sector fine structure constant must be between 0 and 1, you asked for alphafs_dark=%e",param1);
-      if (flag1 == _TRUE_)
-        pba->alphafs_dark = param1;
+
   class_call(parser_read_double(pfc,"alphafs_dark",&param1,&flag1,errmsg),
               errmsg,
               errmsg);
@@ -2835,6 +2835,8 @@ int input_read_parameters_species(struct file_content * pfc,
                "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for log10_Delta_N_twin = %e",param2);*/
         pba->Delta_N_twin = pow(10,param2);
       }
+
+    printf("In input: r=%g,DeltaN=%g,mp=%g,me=%g,alpha=%g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
 
  /*April 26: We don't need the ratio_vev_twin, but we'll define it as m_e_dark/m_e later so we can still use it in all the places where it's useful. Generalize and remove later 
   class_call(parser_read_double(pfc,"ratio_vev_twin",&param1,&flag1,errmsg),

@@ -557,6 +557,8 @@ double rec_HMLA_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, double nH, d
 
 
 /* BEGIN #TWIN SECTOR. Added by Jared Barron, September 2022, in order to evaluate non-Compton scattering rates for atomic dark matter temperature evolution, x2s is needed */
+
+
 double rec_HMLA_x2s(HYREC_DATA *data, double xe, double xHII, double nH, double H, double TM, double TR) {
   REC_COSMOPARAMS *cosmo = data->cosmo;
   HYREC_ATOMIC *atomic = data->atomic;
