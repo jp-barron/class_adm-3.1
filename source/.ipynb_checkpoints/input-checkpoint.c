@@ -2818,22 +2818,31 @@ int input_read_parameters_species(struct file_content * pfc,
   class_call(parser_read_double(pfc,"log10_Delta_N_twin",&param2,&flag2,errmsg),
               errmsg,
               errmsg);
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+  class_call(parser_read_double(pfc,"xi_twin",&param3,&flag3,errmsg),
+              errmsg,
+              errmsg);
+  class_test(class_at_least_two_of_three(flag1,flag2,flag3),
              errmsg,
-             "You can only enter one of 'Delta_N_twin' or 'log10_Delta_N_twin'.");    
+             "You can only enter one of 'Delta_N_twin' or 'log10_Delta_N_twin' or 'xi_twin'.");    
         
       if (flag1 == _TRUE_) {
         /*class_test((param1 < 0.001) || (param1 > 1.),
               errmsg,
                "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for Delta_N_twin = %e",param1);*/
         pba->Delta_N_twin = param1;
-        
+        pba->xi_twin = pow((7./8.)*pow(4./11.,4./3.) * pba->Delta_N_twin,1./4.);
       }
       else if (flag2 == _TRUE_) {
         /*class_test((param2 < -3.) || (param2 > 0.),
               errmsg,
                "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for log10_Delta_N_twin = %e",param2);*/
         pba->Delta_N_twin = pow(10,param2);
+        pba->xi_twin = pow((7./8.)*pow(4./11.,4./3.) * pba->Delta_N_twin,1./4.);
+      }
+      else if (flag3 == _TRUE_) {
+
+        pba->xi_twin = param3;
+        pba->Delta_N_twin = (8/7.)*pow(11./4.,4./3.) * pow(pba->xi_twin,4.);
       }
 
     printf("In input: r=%g,DeltaN=%g,mp=%g,me=%g,alpha=%g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);

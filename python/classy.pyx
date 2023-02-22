@@ -1195,6 +1195,11 @@ cdef class Class:
         return self.ba.Neff
 
     #BEGIN #TWIN SECTOR
+    
+    #Added Neff_bbn. With dark electrons, isn't necessarily same as Neff at other times. 
+    def Neff_bbn(self):
+        return self.ba.Neff_bbn
+    
     def z_rec_twin(self):
         return self.th.z_rec_twin
     
@@ -1826,6 +1831,8 @@ cdef class Class:
             elif name == 'Neff':
                 value = self.ba.Neff
             #BEGIN #TWIN SECTOR 
+            elif name =='Neff_bbn':
+                value = self.ba.Neff_bbn
             elif name == 'z_rec_twin':
                 value = self.th.z_rec_twin
             elif name == 'tau_rec_twin':

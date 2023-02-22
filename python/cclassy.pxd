@@ -74,6 +74,7 @@ cdef extern from "class.h":
         double conformal_age
         double * m_ncdm_in_eV
         double Neff
+        double Neff_bbn
         double Omega0_g
         double Omega0_b
         double Omega0_idr

@@ -6030,7 +6030,7 @@ int perturbations_approximations(
                  1./ppw->pvecback[pba->index_bg_a]-1.,
                  tau,
                  ppw->pvecthermo[pth->index_th_xe],pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
-
+      /* BEGIN #TWIN SECTOR - Print dark sector variables above for debugging purposes */
       /** - ----> (b.2.b) check whether tight-coupling approximation should be on */
 
       if ((tau_c/tau_h < ppr->tight_coupling_trigger_tau_c_over_tau_h) &&

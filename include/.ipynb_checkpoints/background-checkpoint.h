@@ -132,6 +132,7 @@ struct background
   /* TWIN: Input parameters */
   double r_all_twin;
   double Delta_N_twin;
+  double xi_twin;
   double m_p_dark;
   double m_e_dark;
   double alphafs_dark;
@@ -165,6 +166,10 @@ struct background
   double z_eq;      /**< redshift at radiation/matter equality */
   double tau_eq;    /**< conformal time at radiation/matter equality [Mpc] */
 
+  /** START #TWIN SECTOR **/
+  /** Added Neff_bbn for use with bbn likelihood in Montepython **/
+  double Neff_bbn;
+  /** END TWIN SECTOR **/
   //@}
 
 
