@@ -1294,6 +1294,7 @@ int thermodynamics_workspace_init(
   //x_threshold_2 = 0.99;
   c1 = (x_threshold_1*x_threshold_1/(1-x_threshold_1))*ptw->SIunit_nH0_twin/exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin)); //Technically not right if Tmatter is different from Trad. 
   c2 = ptw->const_Tion_H_twin/ptw->Tnow_twin;
+  printf("Redshift where Trad_twin = B_D: z = %g\n",c2-1);
   z_threshold_1 = -2*c2/(3*LambertW1(-0.66667*pow(c1,.66667)*c2));
   
   /*If the decoupling happens early because of eg low alpha_D, such that the matter temperature starts decoupling from the radiation temperature before recombination, 
@@ -2332,7 +2333,7 @@ int thermodynamics_solve(
                                  pth->error_message),
                    pth->error_message,
                    pth->error_message);
-    
+   printf("ti_size = %d\n",ptw->ptdw->ptv->ti_size); 
 
   }  
   }
@@ -3771,7 +3772,6 @@ int thermodynamics_derivs_twin(
   /* Hz is H in inverse seconds (while pvecback returns [H0/c] in inverse Mpcs) */
   Hz = pvecback[pba->index_bg_H] * _c_ / _Mpc_over_m_;
 
-  
   /* Total number density of twin hydrogen nuclei in SI units */
   nH_twin = ptw->SIunit_nH0_twin * (1.+z)* (1.+z)* (1.+z);
   /* Photon temperature in Kelvins. Modify this for some non-trivial photon temperature changes */
@@ -3783,7 +3783,7 @@ int thermodynamics_derivs_twin(
   Trad_twin = (ptw->Tnow_twin*(1.+z)) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
   /*Trad_twin = ptw->Tnow_twin*(1.+z);*/
   Tmat_twin = y[ptv->index_ti_D_Tmat_twin] + (ptw->Tnow_twin*(1.+z)) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
-
+  
   /* For varying fundamental constants (according to 1705.03925) */
   //if (pth->has_varconst == _TRUE_) {
   //  alpha = pvecback[pba->index_bg_varc_alpha];
@@ -3831,15 +3831,17 @@ int thermodynamics_derivs_twin(
         fully implemented. */
     /* Hydrogen equations */
 
-    
+  if (((z < 1.59e7) && (z > 1.57e7)) ){
+      if (ptdw->require_H_twin == _TRUE_) {//printf("Before updates: z = %g, x_twin = %g, dx/dz = %g,Trad=%g,Tmat=%g, Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,dy[ptv->index_ti_x_H_twin],Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);
+      //printf("z=%g, x_twin=%g,DTmat_twin=%g\n",z,y[ptv->index_ti_x_H_twin],y[ptv->index_ti_D_Tmat_twin]);
+        }
+      }
     /*  WILL THIS JUST WORK???? CHECK. */
     /* Hydrogen equations */
     if (ptdw->require_H_twin == _TRUE_) {
       class_call(hyrec_dx_H_dz(pth,ptw->ptdw->phyrec_twin,x_H_twin,0.,x_twin,nH_twin,z,Hz,Tmat_twin,Trad_twin,pba->alphafs_dark/0.00729735,_mu_twin_/((_m_e_*_m_p_)/(_m_e_+_m_p_)),&(dy[ptv->index_ti_x_H_twin])),
                  ptw->ptdw->phyrec_twin->error_message,
-                 error_message);
-      //printf("z=%g, x_e_twin = %g, dx/dz = %g\n",z,x_twin,dy[ptv->index_ti_x_H_twin]);
-          
+                 error_message);          
 
       //printf("x2s is %g\n",x_2s);        
       //The following checks whether the n=2 to n=1 rates are much faster than the recombination rate, which is a necessary condition for the steady-state assumption that x2dot ~ 0. 
@@ -4087,7 +4089,10 @@ int thermodynamics_derivs_twin(
       //dy[ptv->index_ti_D_Tmat] -= pin->pvecdeposition[pin->index_dep_heat] / heat_capacity / (Hz*(1.+z));  /* Heating from energy injection */
     //}
   int random_num = rand() % 1000;
-  if ( (random_num > 995) && tmat_approx_index==1.0){//((z < 2.7e7) && (z > 2.5e7)) ||(random_num > 990){////((z < 9.40e6) && (z > 9.39e6)){//{
+  if ( (random_num > 0) && ((z < 1.59e7) && (z > 1.57e7)) ){
+      //if (ptdw->require_H_twin == _TRUE_) {printf("After updates: z = %g, x_twin = %g, dx/dz = %g,Trad=%g,Tmat=%g, Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,dy[ptv->index_ti_x_H_twin],Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);}
+      //else{printf("After updates: z = %g, x_twin = %g,Trad=%g,Tmat=%g,Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);}
+
       //printf("%g %g %g %g %g %g %g\n",z,eps_twin * depsdlna_twin / (1.+z),eps_twin_compton * depsdlna_twin_compton / (1.+z),eps_twin_freefree * depsdlna_twin_freefree / (1.+z),eps_twin_rayleigh * depsdlna_twin_rayleigh / (1.+z), myrate,2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin);
 
     //printf("Full boltzmann breakdown: adiabatic term: %g, compton term: %g, freefree term: %g, rayleigh term: %g, Trad term: %g\n",2.*Tmat_twin/(1.+z),rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)),(-rate_freefree)/(Hz*(1.+z)),-rate_rayleigh/(Hz*(1.+z)), - ptw->Tnow_twin);
@@ -4383,7 +4388,11 @@ int thermodynamics_sources_twin(
 
   /** - Recalculate all quantities at this current redshift: we need
         at least pvecback, ptdw->x_reio, dy[ptv->index_ti_D_Tmat] */
-
+  if (((z < 1.59e7) && (z > 1.57e7)) ){
+      if (ptdw->require_H_twin == _TRUE_) {
+      //printf("In sources_twin: z=%g, x_twin=%g, dx/dz = %g, DTmat_twin=%g, dDTmat_twin/dz=%g\n",z,y[ptv->index_ti_x_H_twin],dy[ptv->index_ti_x_H_twin],y[ptv->index_ti_D_Tmat_twin],dy[ptv->index_ti_D_Tmat_twin]);
+        }
+      }
   class_call(thermodynamics_derivs_twin(mz,y,dy,thermo_parameters_and_workspace,error_message),
              error_message,
              error_message);
@@ -4456,7 +4465,6 @@ int thermodynamics_sources_twin(
     pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * x_twin * _sigma_twin * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) * _Mpc_over_m_;
 
   }
-  
   /*if (pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin]<0){
       printf("The value of dkappa_twin going into the table is negative, it is %g\n",pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin]);
       printf("z is %g\n",z);
@@ -5572,6 +5580,7 @@ int thermodynamics_calculate_recombination_quantities(
     else{
     /* approximation for maximum of g, using cubic interpolation, assuming equally spaced z's */
     pth->z_rec_twin=pth->z_table[index_tau_twin+1]+0.5*(pth->z_table[index_tau_twin+1]-pth->z_table[index_tau_twin])*(pth->thermodynamics_table[(index_tau_twin)*pth->th_size+pth->index_th_g_twin]-pth->thermodynamics_table[(index_tau_twin+2)*pth->th_size+pth->index_th_g_twin])/(pth->thermodynamics_table[(index_tau_twin)*pth->th_size+pth->index_th_g_twin]-2.*pth->thermodynamics_table[(index_tau_twin+1)*pth->th_size+pth->index_th_g_twin]+pth->thermodynamics_table[(index_tau_twin+2)*pth->th_size+pth->index_th_g_twin]);
+    printf("index_tau_twin = %d, z_rec_twin = %g, z[0] = %g, z_i = %g, z_i+1=%g, g_twin_i=%g, g_twin_i+1 = %g, gmax = %g\n",index_tau_twin,pth->z_rec_twin,pth->z_table[0],pth->z_table[index_tau_twin],pth->z_table[index_tau_twin+1],pth->thermodynamics_table[(index_tau_twin)*pth->th_size+pth->index_th_g_twin],pth->thermodynamics_table[(index_tau_twin+1)*pth->th_size+pth->index_th_g_twin],gmax);
     }
     
     /** - find conformal recombination time using background_tau_of_z() **/

@@ -637,6 +637,9 @@ int evolver_ndf15(
     t = tnew;
     eqvec(ynew,y,neq);
     Jcurrent = _FALSE_;
+  /* TWIN: Added by Jared Barron */ 
+  //printf("tnew= %g, ynew[1] is %g\n",tnew,ynew[1]);
+  if (isnan(ynew[1]) || isnan(f0[0])){printf("There's a NaN!\n");}
 
 // MODIFICATION BY LUC
     if (print_variables!=NULL){
@@ -646,7 +649,6 @@ int evolver_ndf15(
                      parameters_and_workspace_for_derivs,error_message),
                  error_message,
                  error_message);
-
         class_call((*print_variables)(tnew,ynew+1,f0+1,
                     parameters_and_workspace_for_derivs,error_message),
                     error_message,error_message);
@@ -664,7 +666,6 @@ int evolver_ndf15(
                    parameters_and_workspace_for_derivs,error_message),
              error_message,
              error_message);
-
   if (print_variables!=NULL){
     /** If we are printing variables, we must store the final point */
     class_call((*print_variables)(tnew,ynew+1,f0+1,
