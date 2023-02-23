@@ -56,3 +56,4 @@ thermodynamics_nohelium_draft1.c
 thermodynamics_withtwinhelium.c
 tools/.ipynb_checkpoints/arrays-checkpoint.c
 twin_recombination.txt
+adm_test.ini
