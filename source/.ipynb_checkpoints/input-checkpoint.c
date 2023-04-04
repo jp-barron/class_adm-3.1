@@ -2844,8 +2844,8 @@ int input_read_parameters_species(struct file_content * pfc,
         pba->xi_twin = param3;
         pba->Delta_N_twin = (8/7.)*pow(11./4.,4./3.) * pow(pba->xi_twin,4.);
       }
-
-    printf("In input: r=%g,DeltaN=%g,mp=%g,me=%g,alpha=%g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
+     /* Temp FLAG1 */
+    //printf("In input: r=%g,DeltaN=%g,mp=%g,me=%g,alpha=%g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
 
  /*April 26: We don't need the ratio_vev_twin, but we'll define it as m_e_dark/m_e later so we can still use it in all the places where it's useful. Generalize and remove later 
   class_call(parser_read_double(pfc,"ratio_vev_twin",&param1,&flag1,errmsg),
@@ -2858,13 +2858,6 @@ int input_read_parameters_species(struct file_content * pfc,
         pba->ratio_vev_twin = param1;
       }
 */
-
-    /* Added April 22 for segfault debugging purposes - which parameter points cause segfaults? */
-    /*printf("r_all_twin = %e",pba->r_all_twin);
-    printf("Delta_N_twin = %e",pba->Delta_N_twin);
-    printf("ratio_vev_twin = %e",pba->ratio_vev_twin);*/
-    /*End addition*/
-
 
     /* If any one of the twin parameters is zero, the code completely ignores the twin sector. Changed April 26 to be consistent with new parameters */
     if(((pba->r_all_twin != 0.) || (pba->Delta_N_twin != 0.)||(pba->m_p_dark !=0.)||(pba->m_e_dark !=0.) || (pba->alphafs_dark !=0.)) && (pba->r_all_twin)*(pba->Delta_N_twin)*(pba->m_p_dark)*(pba->m_e_dark)*(pba->alphafs_dark)==0.){
@@ -2895,6 +2888,10 @@ int input_read_parameters_species(struct file_content * pfc,
       }
       pba->Omega0_idr = pba->Omega0_g_twin;
       pba->T_idr = pba->T0_twin;
+        
+        
+    printf("START: %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,(pba->m_e_dark)/pba->m_p_dark,pba->alphafs_dark);
+  
     };
 
   /** END TWIN SECTOR */
@@ -5315,9 +5312,10 @@ int input_read_parameters_output(struct file_content * pfc,
     class_test(strlen(string1)>_FILENAMESIZE_-32,errmsg,"Root directory name is too long. Please install in other directory, or increase _FILENAMESIZE_ in common.h");
     /** START #TWIN SECTOR */
       // Setting Output file name.
-      if (pba->r_all_twin!=0){
-      sprintf(string1,"output/TwinOut_r%0.3f_v%0.2f_N%0.2f", pba->r_all_twin, pba->ratio_vev_twin, pba->Delta_N_twin);
-      };
+      /* TEMP FLAG1 */
+      //if (pba->r_all_twin!=0){
+      //sprintf(string1,"output/TwinOut_r%0.3f_v%0.2f_N%0.2f", pba->r_all_twin, pba->ratio_vev_twin, pba->Delta_N_twin);
+      //};
       /** END TWIN SECTOR */
     strcpy(pop->root,string1);
   }

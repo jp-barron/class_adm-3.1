@@ -143,7 +143,10 @@ int hyrec_dx_H_dz(struct thermodynamics* pth, struct thermohyrec* phy, double x_
 
   if (Trad_phys <= TR_MIN || Tmat/Trad <= T_RATIO_MIN) { model = PEEBLES; }
   /* BEGIN #TWIN SECTOR */
-  else if (phy->data->cosmo->fsR != 1. && pth->has_twin == _TRUE_){ model = EMLA2s2p;}//EMLA2s2p;}//Don't use correction function for radiative transfer effects in dark sector, because we can't rely on the linear approximation used to compute it. Rather neglect the effects entirely. 
+  /* TEMP TWIN FLAG */
+  else if (phy->data->cosmo->fsR != 1. && pth->has_twin == _TRUE_){ model = PEEBLES;}//EMLA2s2p;}//Don't use correction function for radiative transfer effects in dark sector, because we can't rely on the linear approximation used to compute it. Rather neglect the effects entirely. 
+
+  //else if (phy->data->cosmo->fsR != 1. && pth->has_twin == _TRUE_){ model = EMLA2s2p;}//EMLA2s2p;}//Don't use correction function for radiative transfer effects in dark sector, because we can't rely on the linear approximation used to compute it. Rather neglect the effects entirely. 
     
   /* END TWIN SECTOR */
   else { model = MODEL; }

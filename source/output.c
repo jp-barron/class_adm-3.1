@@ -132,6 +132,8 @@ int output_init(
     if (pop->output_verbose > 0)
       printf("Writing output files in %s... \n",pop->root);
   }
+  /* Temp FLAG1 */
+  printf("END: %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,(pba->m_e_dark)/pba->m_p_dark,pba->alphafs_dark);
 
   /** - deal with all anisotropy power spectra \f$ C_l\f$'s */
 

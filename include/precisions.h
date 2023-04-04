@@ -143,7 +143,7 @@ class_precision_parameter(thermo_z_linear,double,1.e4)
 /**
  * Number of recfast integration steps (linear sampling, intermdiate times between z_linear and reionization)
  */
-class_precision_parameter(thermo_Nz_lin,int,20000)
+class_precision_parameter(thermo_Nz_lin,int,50000)//Was 20000
 /**
  * Number of recfast integration steps (logarithmnic sampling. early times between z-initial and z_linear)
  */
@@ -156,6 +156,7 @@ class_precision_parameter(thermo_Nz_log_if_twin,int,10000)
  * Evolver to be used for thermodynamics (rk, ndf15)
  */
 class_type_parameter(thermo_evolver,int,enum evolver_type,ndf15)
+
 /**
  * Tolerance of the relative value of integral during thermodynamical integration
  * (used by both evolvers)
@@ -249,7 +250,7 @@ class_string_parameter(hyrec_path,"/external/HyRec2020/","hyrec_path") /**< Path
  */
 
 class_precision_parameter(reionization_z_start_max,double,50.0) /**< Maximum starting value in z for reionization */
-class_precision_parameter(reionization_sampling,double,1.5e-2)  /**< Minimum sampling density in z during reionization */
+class_precision_parameter(reionization_sampling,double,1.5e-2) /**< Minimum sampling density in z during reionization */
 class_precision_parameter(reionization_optical_depth_tol,double,1.0e-4) /**< Relative tolerance on finding the user-given optical depth of reionization given a certain redshift of reionization */
 class_precision_parameter(reionization_start_factor,double,8.0) /**< Searching optical depth corresponding to the redshift is started from an initial offset beyond z_reionization_start, multiplied by reionization_width */
 
@@ -307,9 +308,9 @@ class_precision_parameter(tight_coupling_trigger_tau_c_over_tau_k,double,0.01)
 class_precision_parameter(start_sources_at_tau_c_over_tau_h,double,0.008) /**< sources start being sampled when universe is sufficiently opaque. This is quantified in terms of the ratio of thermo to hubble time scales, \f$ \tau_c/\tau_H \f$. Start when start_sources_at_tau_c_over_tau_h equals this ratio. Decrease this value to start sampling the sources earlier in time. */
 
 class_precision_parameter(tight_coupling_approximation,int,(int)compromise_CLASS) /**< method for tight coupling approximation */
-
-class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_k,double,0.01)  /**< when to switch off the dark-tight-coupling approximation, first condition (see normal tca for full definition) */
-class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_h,double,0.015) /**< when to switch off the dark-tight-coupling approximation, second condition (see normal tca for full definition) */
+/* TWIN: Changed the idm_dr tight coupling trigger values to be smaller. */
+class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_k,double,0.000)  /**< Original value: 0.01. when to switch off the dark-tight-coupling approximation, first condition (see normal tca for full definition) */
+class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_h,double,0.000) /**< Original value: 0.015. when to switch off the dark-tight-coupling approximation, second condition (see normal tca for full definition) */
 
 class_precision_parameter(l_max_g,int,12)     /**< number of momenta in Boltzmann hierarchy for photon temperature (scalar), at least 4 */
 class_precision_parameter(l_max_pol_g,int,10) /**< number of momenta in Boltzmann hierarchy for photon polarization (scalar), at least 4 */

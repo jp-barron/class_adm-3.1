@@ -541,7 +541,7 @@ struct thermo_workspace {
   double const_Tion_H_twin;         /**< ionization energy for twin HI as temperature */
   double const_Tion_HeI_twin;       /**< ionization energy for twin HeI as temperature */
   double const_Tion_HeII_twin;      /**< ionization energy for twin HeII as temperature */
-    
+  double z_decoupling_estimate;  /** Estimate of the redshift of dark decoupling, used to define approx switch. **/
   double z_H_twin_boltzmann_trigger; /**< Redshift where twin hydrogen should start being evolved with Boltzmann equation **/
   double z_H_twin_saha_trigger;      /**< Redshift where twin hydrogen should start being evolved with Sahaequation **/
   double z_He1_twin_trigger;         /**< Redshift where twin HeII->HeI should start being evolved with Saha equation **/

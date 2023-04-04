@@ -99,7 +99,6 @@ double rec_TLA_dxHIIdlna(REC_COSMOPARAMS *cosmo, double xe, double xHII, double 
 
   four_betaB = SAHA_FACT(fsR, meR) *TR*sqrt(TR) *exp(-0.25*EI/TR) * alphaB_TR;
   C          = (3.*RLya + L2s_rescaled(fsR, meR))/(3.*RLya + L2s_rescaled(fsR, meR) + four_betaB);    /* Peebles' C-factor */
-
   s          = SAHA_FACT(fsR, meR) *TR*sqrt(TR) *exp(-EI/TR)/nH;
   Dxe2       = xe*xHII - s*(1.-xHII);    /* xe xp - xe xp[Saha eq with 1s] -- gives more compact expressions */
   DalphaB    = alphaB_TM - alphaB_TR;
@@ -110,6 +109,8 @@ double rec_TLA_dxHIIdlna(REC_COSMOPARAMS *cosmo, double xe, double xHII, double 
       printf("Derivative of ionization fraction computed with Peebles is <0. Matter temperature is %g, radiation temprature is %g",TM,TR);
   }*/
   //printf("RLya in Hyrec is %g\n",RLya);
+    /* TEMP FLAG 2 */
+  //printf("C is %g, s is %g, alphaB_TM is %g, alphaB_TR is %g, xe is %g, xHII is %G, Dxe2 is %g, DalpahB is %g, First term is %g, second term is %g\n",C,s,alphaB_TM,xe,xHII,Dxe2,DalphaB,s*(1.-xHII)*DalphaB, Dxe2*alphaB_TM);
   return -nH*(s*(1.-xHII)*DalphaB + Dxe2*alphaB_TM)*C/H + (cosmo->inj_params->ion + (1.-C)*cosmo->inj_params->exclya)/H;
   
 

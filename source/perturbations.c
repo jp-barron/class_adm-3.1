@@ -3146,7 +3146,7 @@ int perturbations_solve(
         mode. If it starts from an approximation switching point,
         redistribute correctly the perturbations from the previous to
         the new vector of perturbations. */
-
+    /* TWIN TEMP FLAG */
     class_call(perturbations_vector_init(ppr,
                                          pba,
                                          pth,
@@ -3168,6 +3168,8 @@ int perturbations_solve(
     else{
       generic_evolver = evolver_ndf15;
     }
+    /* TWIN TEMP FLAG */
+    //printf("k=%g, Perturbations interval limits = %g, %g\n",k,interval_limit[index_interval],interval_limit[index_interval+1]);
 
     class_call(generic_evolver(perturbations_derivs,
                                interval_limit[index_interval],
@@ -6003,7 +6005,7 @@ int perturbations_approximations(
                ppt->error_message);
                
     if (ppw->pvecthermo[pth->index_th_dmu_idm_dr] < 0) {
-        printf("Warning: dmu_idm_dr < 0 and is = %g. Setting to 0.\n",ppw->pvecthermo[pth->index_th_dmu_idm_dr]);
+        //printf("Warning: dmu_idm_dr < 0 and is = %g. Setting to 0.\n",ppw->pvecthermo[pth->index_th_dmu_idm_dr]);
         ppw->pvecthermo[pth->index_th_dmu_idm_dr] = 0.;
     
     }
@@ -6044,7 +6046,6 @@ int perturbations_approximations(
     }
 
     if(pba->has_idm_dr == _TRUE_){
-
       if(ppw->pvecthermo[pth->index_th_dmu_idm_dr] == 0.){
         ppw->approx[ppw->index_ap_tca_idm_dr] = (int)tca_idm_dr_off;
       }

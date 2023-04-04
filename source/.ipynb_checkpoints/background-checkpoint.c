@@ -2254,6 +2254,7 @@ int background_initial_conditions(
        This could happen for some WDM models.
   */
 
+
   if (pba->has_ncdm == _TRUE_) {
 
     for (counter=0; counter < _MAX_IT_; counter++) {
@@ -2292,6 +2293,18 @@ int background_initial_conditions(
                pba->error_message,
                "Search for initial scale factor a such that all ncdm species are relativistic failed.");
   }
+
+  /* If we have aDM species, we might need to start earlier than the standard value if recombination is super duper early. */
+  /** START #TWIN SECTOR **/
+  if (pba->has_twin == _TRUE_){
+    //Find redshift where dark temperature is 10x binding energy, see if it's greater than the standard starting redshift. If it is, set initial redshift to that value. 
+    if (10 * (pba->alphafs_dark * pba->alphafs_dark * pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_ / 2)/(pba->T0_twin) > 1./ppr->a_ini_over_a_today_default){
+      printf("Dark hydrogen binding energy is so high that the table of background values needs to be extended to higher initial z.\n");
+      a = (pba->T0_twin)/(10 * (pba->alphafs_dark * pba->alphafs_dark * pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_ / 2));
+    }
+  }
+  
+  /** END TWIN SECTOR **/
 
   /* Set initial values of {B} variables: */
   Omega_rad = pba->Omega0_g;

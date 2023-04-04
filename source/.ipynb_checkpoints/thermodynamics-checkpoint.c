@@ -203,7 +203,7 @@ int thermodynamics_at_z(
 
       /* Calculate dkappa/dtau (dkappa/dtau = a n_e x_e sigma_T = a^{-2} n_e(today) x_e sigma_T in units of 1/Mpc) - at very early times there's no Rayleigh scattering so this expression is fine.*/
       pvecthermo[pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * pth->n_e_twin * x0_twin * _sigma_twin * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) * _Mpc_over_m_;
-      ///printf("dkappa_twin = %g\n",pvecthermo[pth->index_th_dkappa_twin]);
+      //printf("dkappa_twin = %g\n",pvecthermo[pth->index_th_dkappa_twin]);
       //printf("dmu_idm_dr is %g\n",pvecthermo[pth->index_th_dmu_idm_dr]);
       //printf("x0_twin is %g\n",x0_twin);
       //printf("z is %g\n",z);
@@ -624,8 +624,8 @@ int thermodynamics_helium_from_bbn(
   /* END TWIN SECTOR */
 
   free(pvecback);
-
-    printf("Neff early = %g, Neff at bbn: %g\n",pba->Neff,pba->Neff_bbn);
+    /* Temp FLAG1 */
+    //printf("Neff early = %g, Neff at bbn: %g\n",pba->Neff,pba->Neff_bbn);
   /*#TWIN SECTOR: Test code - evaluate Neff late: Not necessarily same as early. */
   class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
   class_call(background_at_z(pba,
@@ -641,7 +641,8 @@ int thermodynamics_helium_from_bbn(
               *pvecback[pba->index_bg_rho_crit]
               -pvecback[pba->index_bg_rho_g])
     /(7./8.*pow(4./11.,4./3.)*pvecback[pba->index_bg_rho_g]);
-  printf("Neff at z=1100: %g\n",Neff_late);
+    /* Temp FLAG1 */
+  //printf("Neff at z=1100: %g\n",Neff_late);
   free(pvecback);
   /** - compute Delta N_eff as defined in bbn file, i.e. \f$ \Delta N_{eff}=0\f$ means \f$ N_{eff}=3.046\f$. Note that even if 3.044 is a better default value, we must keep 3.046 here as long as the BBN file we are using has been computed assuming 3.046. */
   DeltaNeff = Neff_bbn - 3.046;
@@ -1023,7 +1024,20 @@ int thermodynamics_checks(
   class_test(ppr->thermo_z_initial < ppr->recfast_z_He_3,
              pth->error_message,
              "increase z_initial in order to start before HeliumIII recombination");
-
+             
+             
+  /* BEGIN #TWIN SECTOR */
+  /* Some checks on the ADM parameters to accommodate the current limitations of the CLASS code. */
+  
+  /* Is the recombination likely to happen before the thermo table initializes at z=1e11? May need to raise thermo_z_initial_if_twin in precisions.h */
+  // class_test()
+  
+  /* Check if the parameters are such that most of the dark hydrogen will recombine. */
+  /* TEMPORARILY DISABLED */
+  /*class_test(pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1.5e-16,
+             pth->error_message,
+            "aDM parameters are such that the recombination will be highly incomplete, with freezeout x_e ~ 0.1 -1. Code is not currently completely trustworthy in this regime.");*/
+  
   return _SUCCESS_;
 }
 
@@ -1175,6 +1189,7 @@ int thermodynamics_workspace_init(
   /* BEGIN #TWIN SECTOR */
   if (pba->has_twin == _TRUE_) {
   ptw->SIunit_nH0_twin = 3.*ptw->SIunit_H0*ptw->SIunit_H0*pba->Omega0_b_twin/(8.*_PI_*_G_*_m_H_twin)*(1.-ptw->YHe_twin); 
+  /* TEMP FLAG1 */
   //printf("Twin hydrogen density today = %g\n",ptw->SIunit_nH0_twin);
   //printf("Twin baryon energy density today = %g\n",pba->Omega0_b_twin);
   //printf("CDM energy density is %g\n",pba->Omega0_cdm);
@@ -1289,44 +1304,113 @@ int thermodynamics_workspace_init(
   /* BEGIN #TWIN SECTOR */  
   if (pba->has_twin == _TRUE_) {
   class_alloc(ptw->ptdw->ap_z_limits_twin,ptw->ptdw->ap_size_twin*sizeof(double),pth->error_message);
-  double x_threshold_1,c1,c2,z_threshold_1;
+  double x_threshold_1,c1,c2,z_threshold_1,z_decoupling_rad,z_threshold_choice;
   x_threshold_1 = 0.999;
-  //x_threshold_2 = 0.99;
   c1 = (x_threshold_1*x_threshold_1/(1-x_threshold_1))*ptw->SIunit_nH0_twin/exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin)); //Technically not right if Tmatter is different from Trad. 
   c2 = ptw->const_Tion_H_twin/ptw->Tnow_twin;
-  printf("Redshift where Trad_twin = B_D: z = %g\n",c2-1);
+  
+  if (pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1.5e-16){
+    //printf("Warning: Recombination will likely be highly incomplete. Even if code runs, it may not be trustworthy. Dark ionization history may be sensitive to z_switch between Saha and Boltzmann. Dark atom criterion is %g \n",pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark));
+  }
+  
+  
+  if (pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1e-19){
+    //printf("Recombination will be so incomplete that we manually set x_e = 1, to avoid code errors when solving the Boltzmann equation for the ionization fraction.\n");
+  }
+  /* Temp FLAG1 */
+  //printf("Redshift where Trad_twin = B_D: z = %g\n",c2-1);
   z_threshold_1 = -2*c2/(3*LambertW1(-0.66667*pow(c1,.66667)*c2));
   
+  
+  //Also calculate the redshift where x would reach 1e-9 in the Saha approximation. Will use this in cases of really late decoupling, where switching to Boltzmann at x=0.999 is too early. 
+  double x_threshold_2, z_threshold_2;
+  x_threshold_2 = 1e-7;
+  c1 = (x_threshold_2*x_threshold_2/(1-x_threshold_2))*ptw->SIunit_nH0_twin/exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin)); //Technically not right if Tmatter is different from Trad. 
+  c2 = ptw->const_Tion_H_twin/ptw->Tnow_twin;
+  z_threshold_2 = -2*c2/(3*LambertW1(-0.66667*pow(c1,.66667)*c2));
   /*If the decoupling happens early because of eg low alpha_D, such that the matter temperature starts decoupling from the radiation temperature before recombination, 
-  then the above approximation is no good. So we also check at what Z the Compton rate falls below Hubble.
+  then the above approximation is no good. So we also check at what Z the Compton rate falls below Hubble for 100% ionization fraction. 
   (Although at this low coupling, other heating processes matter and delay decoupling - but that means we will switch before we need to, which is ok).
   So we're checking when Gamma = sigma_T * n_e_all(z) < 2H(z), solving this for z. We can't definitely say we're going to be in matter vs radiation domination so H is 
   non-trivial to get: H(z) = H0 sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3). If we assume matter domination it's easier. Does this situation only arise at z<3200?*/
-  
-  //z_threshold_mat = pow(2*sqrt(pba->Omega0_m)*ptw->SIunit_H0/(_sigma_twin * ptw->SIunit_nH0_twin * _c_),.666667)-1;
-  //z_threshold_rad = 2*sqrt(pba->Omega0_r)*ptw->SIunit_H0/(_sigma_twin * ptw->SIunit_nH0_twin * _c_)-1;
-  //printf("Compton decoupling threshold z, assuming matter domination: %g\n",z_threshold_mat);
-  //printf("Compton decoupling threshold z, assuming radiation domination: %g\n",z_threshold_rad);
+  z_decoupling_rad = sqrt(sqrt(pba->Omega0_r)*ptw->SIunit_H0/((1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * _Jm3_over_Mpc2_ ) * (0.5)))-1; //Redshift where Thomson scattering rate is equal to Hubble for x_e = 1, assuming radiation domination. 
+  //If z_threshold_1 is not much more than z_decoupling_rad, it means decoupling can happen before recombination, so we should switch to Boltzmann evolving x_e sooner. 
+  //Safety factor of 10? 
+  //printf("Compton decoupling threshold z with x_twin=1, assuming radiation domination: %g\n",z_decoupling_rad);
   //printf("Saha z threshold is %g\n",z_threshold_1);
-  //printf("Boltzmann z threshold is %g\n",z_threshold_1);
+  //printf("Redshift where x=%g under Saha assumption is %g\n",x_threshold_1,z_threshold_1);
+  //printf("Redshift where x=%g under Saha assumption is %g\n",x_threshold_2,z_threshold_2);
+
   //printf("Redshift where Trad=binding energy is %g \n",ptw->const_Tion_H_twin/ptw->Tnow_twin -1);
-  /*if (z_threshold_rad > z_threshold_1) {
-        z_threshold_choice = z_threshold_rad;
-        printf("Compton rate falls below Hubble before dark ionization fraction would start falling. Using z_dec as switch for Boltzmann evolution of dark sector.\n");
+
+  //We're going to estimate z_decoupling in general, not just in the case of early decoupling. Late decoupling can also cause problems in the ode solver. 
+  //Solving for Gamma_compton = Hubble won't be as easy as finding z_threshold for x = 0.999, unfortunately. We're going to need to use a root-finding algorithm. 
+  //Implementing Newton's algorithm. Maybe just bisection algorithm to test for now? Computing/coding in this derivative might be annoying.
+  //Initial guess of T_dec - say upper bound of B_D, lower bound of 0.001 B_D? 
+  
+  double T_dec_upper,T_dec_lower,T_dec_mid,decoupling_tol,T_dec,rhs_saha,x_saha,compton_hubble_diff_upper,compton_hubble_diff_lower,compton_hubble_diff_mid;
+  T_dec_upper = ptw->const_Tion_H_twin;
+  T_dec_lower = 0.001 * ptw->const_Tion_H_twin; //Assumed to be a safe lower limit - pre-factor might need to be adjusted. 
+  decoupling_tol = 0.001;
+  double compton_mid, hubble_mid;
+  double safety_factor;
+  safety_factor = 100;
+  while ((T_dec_upper - T_dec_lower)/T_dec_upper > decoupling_tol) {
+  T_dec_mid = (T_dec_upper + T_dec_lower)/2.;
+  
+  rhs_saha = exp(1.5*log(ptw->const_NR_numberdens_twin*T_dec_mid/(T_dec_mid/ptw->Tnow_twin)/(T_dec_mid/ptw->Tnow_twin)) - ptw->const_Tion_H_twin/T_dec_mid)/ptw->SIunit_nH0_twin;
+  x_saha = 2./(1. + sqrt(1 + 4./rhs_saha));//x_e under saha assumption, at T_dec.
+  //Compton rate - Hubble at T_dec. Includes radiation and matter terms in hubble. 
+  //Multiply hubble by an arbitrary factor to get the 'start' of decoupling - since x_twin goes down more quickly in saha, once decoupling starts and x_twin starts freezing out, the compton/Hubble ratio actually decreases more slowly than the 
+  //equilibrium approximation would suggest. 
+  compton_hubble_diff_mid = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_mid/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha / (1. + x_saha) -  safety_factor * ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_mid/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_mid/ptw->Tnow_twin,1.5));   
+  
+  compton_mid = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_mid/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha / (1. + x_saha);
+  
+  hubble_mid = ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_mid/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_mid/ptw->Tnow_twin,1.5)); 
+  
+  if (compton_hubble_diff_mid > 0){
+    T_dec_upper = T_dec_mid;
+    }
+  if (compton_hubble_diff_mid < 0){
+    T_dec_lower = T_dec_mid;
+  }
+  //printf("T_dec_mid is %g, compton-hubble diff is %g, compton is %g, hubble is %g, relative diff. is %g, x_saha is %g, \n",T_dec_mid,compton_hubble_diff_mid,compton_mid,hubble_mid,compton_hubble_diff_mid/hubble_mid,x_saha);
+  }
+  
+  ptw->z_decoupling_estimate = T_dec_mid/ptw->Tnow_twin - 1;
+  //printf("z of decoupling, found by bisection with precision %g, is: %g, with x_saha = %g\n",decoupling_tol,ptw->z_decoupling_estimate,x_saha); 
+  //printf("T_dec/B_D = %g\n",T_dec_mid/ptw->const_Tion_H_twin);
+  
+  if (T_dec_mid/ptw->const_Tion_H_twin > 0.1){
+    //printf("The decoupling is at or above ~ 0.1 x B_D - decoupling happens before it's energetically preferable to recombine. Recombination will likely be highly incomplete. Check the ionization history from CLASS very carefully! Decoupling happens due to power-law dependence of Compton scattering on temperature, rather than an exponential cutoff from x_e_twin dropping.\n");
+  } 
+  
+  
+  if (ptw->z_decoupling_estimate > z_threshold_1) {//(10 * z_decoupling_rad > z_threshold_1) {
+        z_threshold_choice = ptw->z_decoupling_estimate;//10 * z_decoupling_rad;
+        //printf("Compton rate falls below %g x Hubble before dark ionization fraction would start falling. Using z_dec = %g as switch for Boltzmann evolution of dark sector.\n",safety_factor, ptw->z_decoupling_estimate);
         //Decoupling happens before naive Saha equilibrium lets x_e fall below 0.999. 
   }
-  else if (z_threshold_rad < z_threshold_1) {
+  else if ((ptw->z_decoupling_estimate < 0.01 * z_threshold_1) || x_saha < 1e-9){
+    //For ~ very high Thomson cross-section, or more accurately high T_rec/B_D, switching to Boltzmann at x_twin = 0.999 is too early - the ODE is too stiff even for the stiff solver, it seems. 
+    //To accommodate this, switch at a lower z, lower x_twin. Since the dark sector stays in equilibrium so late, the Saha equation is an ok approximation in this regime for much longer. Can validate this afterwards within the code by checking compton/hubble actual value at this redshift.  
+    z_threshold_choice = z_threshold_2;//ptw->z_decoupling_estimate;//z_threshold_1;
+    //printf("Compton rate falls below %g x Hubble well after recombination, or at very low x_twin < 1e-9. Using z = %g, where x falls below %g in Saha, as switch for Boltzmann evolution.\n",safety_factor,z_threshold_2,x_threshold_2);
+  }
+  else{//(10 * z_decoupling_rad < z_threshold_1) {
         z_threshold_choice = z_threshold_1;
-        printf("Decoupling happens during or after recombination. Using z where Saha value of x_e falls below 0.999 as switch for Boltzmann evolution of dark sector.\n");
+        //printf("Decoupling happens during or after (but not too much after) recombination. Using z = %g where Saha value of x_e falls below %g as switch for Boltzmann evolution of dark sector.\n",z_threshold_1,x_threshold_1);
         //Decoupling happens during or after recombination - proceed as normal. 
   }
-  if (z_threshold_choice > 0.099*ptw->const_Tion_H_twin/ptw->Tnow_twin -1) {
-  //If we've found a z where the twin sector is hotter than the binding energy of the dark hydrogen, choose the binding energy of dark hydrogen * 0.1 - which is far as the tables go. I don't think recombination can start before that, ever, no matter what - hydrogen isn't energetically preferred. 
-        z_threshold_choice = 0.099*ptw->const_Tion_H_twin/ptw->Tnow_twin -1;
-        printf("Using T corresponding to 0.099*dark hydrogen binding energy as switch for Boltzmann evolution of dark sector.\n");
+  
+
+  ptw->z_H_twin_boltzmann_trigger = z_threshold_choice;//pth->z_threshold_twin;
+  /* TEMP FLAG */
+  //printf("Redshift of switch is %g\n",ptw->z_H_twin_boltzmann_trigger);
+  if (pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1e-19){
+    ptw->z_H_twin_boltzmann_trigger = 0.0;//Never switch to using Boltzmann equation for dark hydrogen ionization fraction. Manually set x_e_twin = 1.0
   }
-  z_threshold_choice = 700;*/
-  ptw->z_H_twin_boltzmann_trigger = z_threshold_1;//pth->z_threshold_twin;
   //ptw->z_H_twin_saha_trigger = z_threshold_1;//0.05 * ptw->const_Tion_H_twin/ptw->Tnow_twin - 1.;
   //ptw->z_He2_twin_trigger = 0.03 * ptw->const_Tion_HeI_twin/ptw->Tnow_twin - 1.;
   //ptw->z_He1f_twin_trigger = 0.01 * ptw->const_Tion_HeII_twin/ptw->Tnow_twin - 1.;
@@ -1336,7 +1420,9 @@ int thermodynamics_workspace_init(
   //printf("Redshift where H Saha starts: %g\n",ptw->z_H_twin_saha_trigger);
   //printf("Redshift where dark H Boltzmann starts: %g\n",ptw->z_H_twin_boltzmann_trigger);
   if (ptw->z_H_twin_boltzmann_trigger > ppr->thermo_z_initial_if_twin){
-    ptw->z_H_twin_boltzmann_trigger = ppr->thermo_z_initial_if_twin - 2.0e8;//Don't let the code go back further than the highest z_initial we set, 1e11 right now. Offset it by 2e8 so they're not equal. Want at least one time step before the switch, so that the code doesn't bug out. Out of 1e11 that's not very much.  
+    ppr->thermo_z_initial = 100 * ptw->z_H_twin_boltzmann_trigger;
+    ppr->thermo_z_initial_if_twin = 100 * ptw->z_H_twin_boltzmann_trigger;
+    printf("Boltzmann evolution wants to start before z=1e11. Setting initial z of thermodynamics table to that threshold x 100, = %g.\n", ppr->thermo_z_initial);//Don't let the code go back further than the highest z_initial we set, 1e11 right now. Offset it by 2e8 so they're not equal. 
   }
   //If the dark recombination isn't super early, we don't need to waste time evolving things starting at z=10^11. 
   if ((ptw->z_H_twin_boltzmann_trigger < 1.0e7) && (ptw->z_H_twin_boltzmann_trigger > 1.0e2)){
@@ -1345,16 +1431,18 @@ int thermodynamics_workspace_init(
   if (ptw->z_H_twin_boltzmann_trigger < 1.0e2){
     ppr->thermo_z_initial_if_twin = 1.0e5;
   }
-  printf("Redshift where dark sector temperature is approximately m_e_dark: %g\n",(pba->m_e_dark * pow(10.,9) * _eV_ / _k_B_)/(ptw->Tnow_twin) -1);
-  printf("z          qssrate     compton   freefree   rayleigh   myrate     full\n");
+  /* Temp FLAG1 */
+  //printf("Redshift where dark sector temperature is approximately m_e_dark: %g\n",(pba->m_e_dark * pow(10.,9) * _eV_ / _k_B_)/(ptw->Tnow_twin) -1);
+  //printf("z          qssrate     compton   freefree   rayleigh   myrate     full\n");
   if (ppr->thermo_z_initial_if_twin > (pba->m_e_dark * pow(10.,9) * _eV_ / _k_B_)/(ptw->Tnow_twin) -1 ){
-    printf("Dark sector thermo wants to initialize before dark electrons annihilate. Setting start of dark sector thermo evolution to dark electron mass\n");
-    ppr->thermo_z_initial_if_twin = (pba->m_e_dark * pow(10.,9) * _eV_ / _k_B_)/(ptw->Tnow_twin) -1;
+    //printf("Dark sector thermo wants to initialize before dark electrons annihilate. Setting start of dark sector thermo evolution to dark electron mass\n");
+    //ppr->thermo_z_initial_if_twin = (pba->m_e_dark * pow(10.,9) * _eV_ / _k_B_)/(ptw->Tnow_twin) -1;
     if (ptw->z_H_twin_boltzmann_trigger > ppr->thermo_z_initial_if_twin){
     printf("The dark recombination wants to happen at the dark electron mass, that's not good. Check your parameters. \n");
     }
   }
-  printf("Switch to Boltzmann evolution of x_e_twin at z=%g\n",ptw->z_H_twin_boltzmann_trigger);
+  /* Temp FLAG1 */
+  //printf("Switch to Boltzmann evolution of x_e_twin at z=%g\n",ptw->z_H_twin_boltzmann_trigger);
   ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_brec_twin] = ptw->z_H_twin_boltzmann_trigger;//ptw->z_H_twin_saha_trigger;//ptw->z_He1_twin_trigger;
   //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He1_twin] = ptw->z_He2_twin_trigger;//ptw->z_He1f_twin_trigger; // First twin He-recombination (HeIII)
   //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He1f_twin] = ptw->z_He2_twin_trigger; // in between 1st and 2nd twin He recombination 
@@ -2146,7 +2234,7 @@ int thermodynamics_solve(
   extern int evolver_rk();
   extern int evolver_ndf15();
   int (*generic_evolver)() = evolver_ndf15;
-
+  
   /** - choose evolver */
   switch (ppr->thermo_evolver) {
   case rk:
@@ -2171,6 +2259,7 @@ int thermodynamics_solve(
   for(i=0; i < pth->tt_size; ++i) {
     mz_output[i] = -pth->z_table[pth->tt_size-1-i];
   }
+  /* TWIN TEMP FLAG */
   //printf("First redshift = %g\n",mz_output[0]);
   //printf("last redshift = %g\n",mz_output[pth->tt_size-1]);
   /** - define intervals for each approximation scheme */
@@ -2314,6 +2403,8 @@ int thermodynamics_solve(
 
 
     /** --> (c2) just integrate quantities over the current interval. */
+      /* TWIN TEMP FLAG */
+      //printf("Starting dark sector ODE integration \n");
 
       class_call(generic_evolver(thermodynamics_derivs_twin,
                                  interval_limit_twin[index_interval_twin],
@@ -2333,8 +2424,6 @@ int thermodynamics_solve(
                                  pth->error_message),
                    pth->error_message,
                    pth->error_message);
-   printf("ti_size = %d\n",ptw->ptdw->ptv->ti_size); 
-
   }  
   }
   /* END TWIN SECTOR */
@@ -3759,7 +3848,6 @@ int thermodynamics_derivs_twin(
   ap_current_twin = ptdw->ap_current_twin;
 
   /** - Get background/thermo quantities in this point */
-
   class_call(background_at_z(pba,
                              z,
                              long_info,
@@ -3783,6 +3871,12 @@ int thermodynamics_derivs_twin(
   Trad_twin = (ptw->Tnow_twin*(1.+z)) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
   /*Trad_twin = ptw->Tnow_twin*(1.+z);*/
   Tmat_twin = y[ptv->index_ti_D_Tmat_twin] + (ptw->Tnow_twin*(1.+z)) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
+  /* TWIN TEMP FLAG: This is a cloogy solution to the fact that sometimes the ode solver returns a Tmat below 0 at z=0, which then breaks the code. */
+  if (Tmat_twin < 0){
+  /* TWIN TEMP FLAG */
+  //printf("Tmat is %g < 0! This is obviously bad. Redshift is z=%g. \n",Tmat_twin,z);
+  Tmat_twin = 1e-5;
+  }
   
   /* For varying fundamental constants (according to 1705.03925) */
   //if (pth->has_varconst == _TRUE_) {
@@ -3831,14 +3925,15 @@ int thermodynamics_derivs_twin(
         fully implemented. */
     /* Hydrogen equations */
 
-  if (((z < 1.59e7) && (z > 1.57e7)) ){
+  if (((z < 30) && (z > 27)) || (z < .1)){
       if (ptdw->require_H_twin == _TRUE_) {//printf("Before updates: z = %g, x_twin = %g, dx/dz = %g,Trad=%g,Tmat=%g, Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,dy[ptv->index_ti_x_H_twin],Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);
       //printf("z=%g, x_twin=%g,DTmat_twin=%g\n",z,y[ptv->index_ti_x_H_twin],y[ptv->index_ti_D_Tmat_twin]);
-        }
-      }
+        //}
+      }}
     /*  WILL THIS JUST WORK???? CHECK. */
     /* Hydrogen equations */
     if (ptdw->require_H_twin == _TRUE_) {
+      //printf("x_H_twin = %g, x_twin = %g, nH_twin = %g, z = %g, Hz = %g, Tmat_twin = %g, Trad_twin = %g\n",x_H_twin,x_twin,nH_twin,z,Hz,Tmat_twin,Trad_twin);
       class_call(hyrec_dx_H_dz(pth,ptw->ptdw->phyrec_twin,x_H_twin,0.,x_twin,nH_twin,z,Hz,Tmat_twin,Trad_twin,pba->alphafs_dark/0.00729735,_mu_twin_/((_m_e_*_m_p_)/(_m_e_+_m_p_)),&(dy[ptv->index_ti_x_H_twin])),
                  ptw->ptdw->phyrec_twin->error_message,
                  error_message);          
@@ -3866,6 +3961,11 @@ int thermodynamics_derivs_twin(
      /*if (dy[ptv->index_ti_x_H_twin] < 0) {
     printf("Derivative of twin ionization fraction is less than 0, = %g. redshift is %g. Ionization fraction is %g.\n",dy[ptv->index_ti_x_H_twin],z,x_twin);
     }*/
+    //Special case for the case where the aDM decouples from the dark photons before recombination, and no recombination occurs. 
+    if (pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1e-19){
+      dy[ptv->index_ti_x_H_twin] = 0.0;
+    }
+    
     }
     //Need this if we use photoionization effects. 
     class_call(hyrec_x2s(pth,ptw->ptdw->phyrec_twin,x_H_twin,0.,x_twin,nH_twin,z,Hz,Tmat_twin,Trad_twin,pba->alphafs_dark/0.00729735,_mu_twin_/((_m_e_*_m_p_)/(_m_e_+_m_p_)),&(ptdw->x_2s_twin)),
@@ -3991,7 +4091,6 @@ int thermodynamics_derivs_twin(
   double Gamma_freefree, Gamma_rayleigh;
   double qssrate;
   if ((fmax(fmax(rate_gamma_b_twin,rate_freefree*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin))),rate_rayleigh*(Trad_twin)/(Tmat_twin * (Trad_twin - Tmat_twin))) > 2000.0*Hz )) {//&& ((Trad_twin-Tmat_twin)/Trad_twin < 1.0e-5))
-
    /* Alternative quasi-steady state equation, for multiple competing processes. */
    dHdz = -pvecback[pba->index_bg_H_prime]/pvecback[pba->index_bg_H] * _c_ / _Mpc_over_m_;
    Gamma_freefree = 2*(pow(_h_P_/(2*_PI_),2)*sqrt(_k_B_))*(16*pow(pba->alphafs_dark,3)*1.3*sqrt(2*_PI_*Tmat_twin)*pow(x_twin,2)*pow(nH_twin,2))/pow(3*_mu_twin_,1.5)*(pow(_PI_,2)*(1.0/Trad_twin)*(1+2*(Trad_twin-Tmat_twin)/Trad_twin)-6*1.2020569*pow((Trad_twin-Tmat_twin)/Trad_twin,2))/6./(3 * _k_B_ * nH_twin*(1.+x_twin+ptw->fHe_twin));// *(Trad_twin/Tmat_twin)/(Trad_twin-Tmat_twin) <- divide by Tmat_twin and multiply by Trad_twin/(Trad_twin-Tmat_twin) to get rate that matches plot;
@@ -4088,18 +4187,38 @@ int thermodynamics_derivs_twin(
     //if (pth->has_exotic_injection == _TRUE_) {
       //dy[ptv->index_ti_D_Tmat] -= pin->pvecdeposition[pin->index_dep_heat] / heat_capacity / (Hz*(1.+z));  /* Heating from energy injection */
     //}
+    //Derivative of x_e w.r.t. z in Saha approximation. 
+    double drhsdz;
+    double dxdz_saha;
+    double rhs;
+    rhs = exp(1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)) - ptw->const_Tion_H_twin/Tmat_twin)/ptw->SIunit_nH0_twin;
+    drhsdz = exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin) + log((2.*(ptw->const_Tion_H_twin/ptw->Tnow_twin) - 3 * (1. + z))/(2 * pow((1.+z),3.5))) - ptw->const_Tion_H_twin/ptw->Tnow_twin/(1.+z))/ptw->SIunit_nH0_twin;
+    dxdz_saha = 4.0/ (rhs * rhs * sqrt(1.0 + 4/rhs) * (1 + sqrt(1 + 4.0/rhs)) * (1 + sqrt(1 + 4.0/rhs))) * drhsdz;
+    
   int random_num = rand() % 1000;
-  if ( (random_num > 0) && ((z < 1.59e7) && (z > 1.57e7)) ){
-      //if (ptdw->require_H_twin == _TRUE_) {printf("After updates: z = %g, x_twin = %g, dx/dz = %g,Trad=%g,Tmat=%g, Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,dy[ptv->index_ti_x_H_twin],Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);}
-      //else{printf("After updates: z = %g, x_twin = %g,Trad=%g,Tmat=%g,Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);}
+  
+  if (z < 5){//((fabs(ptw->z_H_twin_boltzmann_trigger-z)/ptw->z_H_twin_boltzmann_trigger < 0.005) ){//|| z < 10 //fabs
+  /* TEMP FLAG 2 */
+      //printf("After updates: z = %g, x_twin = %g, dx/dz = %g, dx/dz_saha = %g, Trad=%g,Tmat=%g, Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,dy[ptv->index_ti_x_H_twin],dxdz_saha,Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);
+      //printf("After updates: z = %g, x_twin = %g, x_saha = %g, Hubble = %g, compton rate = %g, Trad=%g,Tmat=%g, Trad-Tmat/Trad=%g, dTmat/dz adiabatic = %g, dTmat/dz coupling = %g, tmat_approx_index = %g\n",z,x_twin, 2./(1. + sqrt(1 + 4./rhs)),Hz,rate_gamma_b_twin,Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin, 2.*Tmat_twin/(1.+z),rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)) + (-rate_freefree-rate_rayleigh)/(Hz*(1.+z)),tmat_approx_index);
+  }
+  
 
+  if (fabs(z -  ptw->z_decoupling_estimate)/ ptw->z_decoupling_estimate < 0.005) {//random_num >0){//} && ((z < 1.59e7) && (z > 1.57e7)) ){(((z < 27) && (z > 27)) || (z < .1))
+     //printf("After updates: z = %g, x_twin = %g, dx/dz = %g, x_saha = %g, Hubble = %g, compton rate = %g, Trad=%g,Tmat=%g, Trad-Tmat/Trad=%g\n",z,x_twin,dy[ptv->index_ti_x_H_twin], 2./(1. + sqrt(1 + 4./rhs)),Hz,rate_gamma_b_twin,Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin);
+      if (ptdw->require_H_twin == _TRUE_) {
+      //printf("After updates: z = %g, x_twin = %g, dx/dz = %g, dx/dz_saha = %g, Trad=%g,Tmat=%g, Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,dy[ptv->index_ti_x_H_twin],dxdz_saha,Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);
+      }}
+      //else{printf("After updates: z = %g, x_twin = %g,Trad=%g,Tmat=%g,Trad-Tmat/Trad=%g,dDeltaT/dz=%g\n",z,x_twin,Trad_twin,Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,dy[ptv->index_ti_D_Tmat_twin]);}
+  
       //printf("%g %g %g %g %g %g %g\n",z,eps_twin * depsdlna_twin / (1.+z),eps_twin_compton * depsdlna_twin_compton / (1.+z),eps_twin_freefree * depsdlna_twin_freefree / (1.+z),eps_twin_rayleigh * depsdlna_twin_rayleigh / (1.+z), myrate,2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin);
 
     //printf("Full boltzmann breakdown: adiabatic term: %g, compton term: %g, freefree term: %g, rayleigh term: %g, Trad term: %g\n",2.*Tmat_twin/(1.+z),rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z)),(-rate_freefree)/(Hz*(1.+z)),-rate_rayleigh/(Hz*(1.+z)), - ptw->Tnow_twin);
     //printf("z = %g, deltaT = %g, epsilon = %g, QSS d(Tmat-Trad)/dz = %g, full d(Tmat-Trad)/dz = %g, my QSS d(Tmat-Trad)/dz = %g, approximation = %g\n",z,Trad_twin-Tmat_twin,(Trad_twin-Tmat_twin)/Trad_twin,qssrate,2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin,myrate,tmat_approx_index);
     //printf("z = %g, Tmat=%g, Trad=%g, deltaT = %g, QSS d(Tmat-Trad)/dz = %g, full d(Tmat-Trad)/dz = %g, compton only d(Tmat-Trad)/dz = %g, H=%g, compton=%g, prec=%g, pion=%g,brem=%g, rayleigh=%g approximation = %g\n",z,Tmat_twin,Trad_twin,Trad_twin-Tmat_twin,dy[ptv->index_ti_D_Tmat_twin],2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))+ (-rate_freefree-rate_rayleigh)/(Hz*(1.+z))- ptw->Tnow_twin,2.*Tmat_twin/(1.+z)+ rate_gamma_b_twin * (Tmat_twin-Trad_twin) / (Hz*(1.+z))- ptw->Tnow_twin,Hz,rate_gamma_b_twin,rate_photorecombination,rate_photoionization,rate_freefree,rate_rayleigh,tmat_approx_index);
     //printf("eps_twin*depsdlna_twin: %g, eps_twin_compton*depsdlna_twin_compton: %g, depsdlna_twin_compton: %g, eps_twin_freefree*depsdlna_twin_freefree: %g,  depsdlna_twin_freefree: %g,  eps_rayleigh*depsdlna_twin_rayleigh: %g\n",eps_twin*depsdlna_twin,eps_twin_compton*depsdlna_twin_compton, depsdlna_twin_compton,eps_twin_freefree*depsdlna_twin_freefree, depsdlna_twin_freefree,eps_twin_rayleigh*depsdlna_twin_rayleigh);
-  }
+  //printf("z = %g, deltaT = %g, x_e = %g, Thomson rate = %g, H = %g, tmat_approx_index = %g\n",z,Trad_twin-Tmat_twin,x_twin,rate_gamma_b_twin,Hz,tmat_approx_index);
+  
   /** - If we have extreme heatings, recombination does not fully happen
    * and/or re-ionization happens before a redshift of
    * reionization_z_start_max (default = 50).  We want to catch this
@@ -4393,6 +4512,9 @@ int thermodynamics_sources_twin(
       //printf("In sources_twin: z=%g, x_twin=%g, dx/dz = %g, DTmat_twin=%g, dDTmat_twin/dz=%g\n",z,y[ptv->index_ti_x_H_twin],dy[ptv->index_ti_x_H_twin],y[ptv->index_ti_D_Tmat_twin],dy[ptv->index_ti_D_Tmat_twin]);
         }
       }
+  if ((z<30) && (z > 27)){
+    //printf("In thermodynamics_sources_twin\n");
+  }
   class_call(thermodynamics_derivs_twin(mz,y,dy,thermo_parameters_and_workspace,error_message),
              error_message,
              error_message);
@@ -4405,6 +4527,11 @@ int thermodynamics_sources_twin(
   Trad_twin = (ptw->Tnow_twin*(1.+z)) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
   /*Trad_twin = ptw->Tnow_twin*(1.+z);*/
   Tmat_twin = y[ptv->index_ti_D_Tmat_twin] + Trad_twin;
+  if (Tmat_twin < 0){
+  /* TEMP FLAG TWIN */
+  //printf("In sources, Tmat = %g < 0, z = %g\n",Tmat_twin,z);
+  Tmat_twin = 1e-5;
+  }
   /* Note that dy[index_ti_Q] represents dQ/d(-z), thus we need -dy here */
   dTmat_twin = -dy[ptv->index_ti_D_Tmat_twin] + Trad_twin/(1.+z);
 
@@ -5580,7 +5707,8 @@ int thermodynamics_calculate_recombination_quantities(
     else{
     /* approximation for maximum of g, using cubic interpolation, assuming equally spaced z's */
     pth->z_rec_twin=pth->z_table[index_tau_twin+1]+0.5*(pth->z_table[index_tau_twin+1]-pth->z_table[index_tau_twin])*(pth->thermodynamics_table[(index_tau_twin)*pth->th_size+pth->index_th_g_twin]-pth->thermodynamics_table[(index_tau_twin+2)*pth->th_size+pth->index_th_g_twin])/(pth->thermodynamics_table[(index_tau_twin)*pth->th_size+pth->index_th_g_twin]-2.*pth->thermodynamics_table[(index_tau_twin+1)*pth->th_size+pth->index_th_g_twin]+pth->thermodynamics_table[(index_tau_twin+2)*pth->th_size+pth->index_th_g_twin]);
-    printf("index_tau_twin = %d, z_rec_twin = %g, z[0] = %g, z_i = %g, z_i+1=%g, g_twin_i=%g, g_twin_i+1 = %g, gmax = %g\n",index_tau_twin,pth->z_rec_twin,pth->z_table[0],pth->z_table[index_tau_twin],pth->z_table[index_tau_twin+1],pth->thermodynamics_table[(index_tau_twin)*pth->th_size+pth->index_th_g_twin],pth->thermodynamics_table[(index_tau_twin+1)*pth->th_size+pth->index_th_g_twin],gmax);
+    /* Temp FLAG1 */
+    //printf("index_tau_twin = %d, z_rec_twin = %g, z[0] = %g, z_i = %g, z_i+1=%g, g_twin_i=%g, g_twin_i+1 = %g, gmax = %g\n",index_tau_twin,pth->z_rec_twin,pth->z_table[0],pth->z_table[index_tau_twin],pth->z_table[index_tau_twin+1],pth->thermodynamics_table[(index_tau_twin)*pth->th_size+pth->index_th_g_twin],pth->thermodynamics_table[(index_tau_twin+1)*pth->th_size+pth->index_th_g_twin],gmax);
     }
     
     /** - find conformal recombination time using background_tau_of_z() **/
@@ -5604,8 +5732,10 @@ int thermodynamics_calculate_recombination_quantities(
     /** - find time (always after recombination) at which tau_c/tau
      falls below some threshold, defining tau_free_streaming */
     /** CHECK WITH SAURABH: I changed this to just index_tau from index_tau_fs. is that ok? */
-    index_tau_twin=index_tau-1;
-    //index_tau_twin=pth->tt_size-1; /** Starting from the beginning*/
+    //index_tau_twin=index_tau-1;
+    /* CHANGED FLAG March 15 2023 - was incorrectly starting from z ~ 350 to find tau_freestreaming. Now using beginning of table - so this is slower but it's not wrong this time. tau_free_streaming_twin gets turned into tau_idr_free_streaming so this is really important. Does this change evolution of perturbations? Affects when free-streaming approx is turned on in perturbations module.   */
+    //printf("starting from z = %g\n",pth->z_table[pth->tt_size-1]);
+    index_tau_twin=pth->tt_size-1; /** Starting from the beginning*/
     /* CHECK THIS: comment: using index_tau_max (index_tau_fs) instead of pth->tt_size-1 ensures that the switch is always after recombination (free streaming) */
     
     class_call(background_tau_of_z(pba,pth->z_table[index_tau_twin],&tau_twin),
@@ -5617,6 +5747,7 @@ int thermodynamics_calculate_recombination_quantities(
            && (index_tau_twin>0)) {
 
       index_tau_twin--;
+      //printf("z = %g\n",pth->z_table[index_tau_twin]);
 
       class_call(background_tau_of_z(pba,pth->z_table[index_tau_twin],&tau_twin),
                  pba->error_message,
@@ -5929,7 +6060,7 @@ int thermodynamics_ionization_fractions_twin(
   struct thermo_vector * ptv = ptdw->ptv;
 
   /* Thermo quantities */
-  double x_H_twin,x_twin=0.,Tmat_twin,rhs,sqrt_val,rescale_rhs = 1.,x_H_twin2,rhs2;//,x_He_twin,xHeII_twin
+  double x_H_twin,x_twin=0.,Tmat_twin,rhs,sqrt_val,rescale_rhs = 1.;//,x_He_twin,xHeII_twin
   /* Analytical quantities */
 
   /* Varying fundamental constants (according to 1705.03925) */
@@ -5975,13 +6106,8 @@ int thermodynamics_ionization_fractions_twin(
     x_H_twin = 2./(1. + sqrt(1 + 4./rhs));
     x_twin = x_H_twin; 
     
-    rhs2 = exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin*(1.+z)/(1.+z)/(1.+z)) - ptw->const_Tion_H_twin/(ptw->Tnow_twin*(1.+z)))/ptw->SIunit_nH0_twin;
-    if (pth->has_varconst == _TRUE_) {
-      rhs2 *= rescale_rhs;
-    }
-    x_H_twin2 = 2./(1. + sqrt(1 + 4./rhs2));
     //printf("Currently evolving Tmat with quasi-steady state. Tmat = %g, Trad = %g\n",Tmat_twin,ptw->Tnow_twin*(1.+z));
-    //printf("x_H_twin with Saha, Tmat = %g, with Trad = %g\n",x_H_twin,x_H_twin2);
+    //printf("rhs = %g, log part: %g, Tion = %g, Tmat = %g, nH0_twin = %g\n",rhs,1.5*log(ptw->const_NR_numberdens_twin*Tmat_twin/(1.+z)/(1.+z)),ptw->const_Tion_H_twin,Tmat_twin,ptw->SIunit_nH0_twin);
     //x_twin = 1;//2.*(1+2.*ptw->fHe_twin)/(1.-rhs*(1.+ptw->fHe_twin) + sqrt_val);
     //printf("This should be just 1 if fHe_twin = 0 \n");
     //printf("x_twin = %g \n",x_twin);
@@ -5989,6 +6115,12 @@ int thermodynamics_ionization_fractions_twin(
     //printf("Current redshift = %g \n",z);
     ptdw->x_H_twin = x_H_twin;//1.;
     //ptdw->x_He_twin = 1.;
+    /* Special case: When the dark recombination never happens because the dark sector decouples much before recombination would happen. We have a criterion for when this happens, parametrically, and in this       regime we set the ionization fraction to always be 1. If evolved fully, you might have x_e_final ~ 0.99, but this is a small difference, and protects from numerical errors when trying to solve the Boltzmann equation in this regime.*/
+    if (pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1e-19){
+      x_H_twin = 1.0;
+      x_twin = 1.0;
+      ptdw->x_H_twin = x_H_twin;
+      }
 
   }
   /** - --> second regime: first Helium recombination (analytic approximation) */
@@ -6100,7 +6232,15 @@ int thermodynamics_ionization_fractions_twin(
     x_H_twin2 = 2./(1. + sqrt(1 + 4./rhs2));*/
     //printf("Currently evolving Tmat with full equation at redshift %g. Tmat = %g, Trad = %g\n",z,Tmat_twin,ptw->Tnow_twin*(1.+z));
     //printf("x_H_twin with Saha, Tmat = %g, with Trad = %g\n",x_H_twin,x_H_twin2);
+    if (pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1e-19){
+      x_H_twin = 1.0;
+      x_twin = 1.0;
+      ptdw->x_H_twin = x_H_twin;
+      }
   }
+  
+  
+
     
   ptdw->x_noreio_twin = x_twin;
 
