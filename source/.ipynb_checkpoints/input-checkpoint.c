@@ -2889,8 +2889,8 @@ int input_read_parameters_species(struct file_content * pfc,
       pba->Omega0_idr = pba->Omega0_g_twin;
       pba->T_idr = pba->T0_twin;
         
-        
-    printf("START: %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,(pba->m_e_dark)/pba->m_p_dark,pba->alphafs_dark);
+    //TWIN FLAG - for testing/debugging purposes. 
+    //printf("START: %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
   
     };
 

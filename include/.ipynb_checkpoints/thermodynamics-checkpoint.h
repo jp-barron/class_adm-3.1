@@ -332,6 +332,11 @@ struct thermodynamics
   double ra_rec_twin;  /**< conformal angular diameter distance to recombination */
   double da_rec_twin;  /**< physical angular diameter distance to recombination */
 
+  double tau_d_twin; /**< twin baryon drag time **/
+  double z_d_twin;  /**<twin baryon drag redshift **/
+  double ds_d_twin; /**< physical sound horizon at twin baryon drag */
+  double rs_d_twin; /**< comoving sound horizon at twin baryond drag */
+    
   double angular_rescaling_twin; /**< [ratio ra_rec / (tau0-tau_rec)]: gives CMB rescaling in angular space relative to flat model (=1 for curvature K=0) */
   double tau_free_streaming_twin;     /**< minimum value of tau at which free-streaming approximation can be switched on */
   double Z_H_REC_MAX_twin; /**< Redshift after which twin H recombination happens */
@@ -459,6 +464,8 @@ struct thermo_diffeq_workspace {
   double Fpi_tab[200]; /* List of values of photoionization atomic physics function */
   double ToB_tab[200]; /* List of values of TR/B_D that F_pi and F_pr are evaluated at*/
   double TMoTR_tab[40]; /* List of values of T_m/T_R that F_pr is evaluated at */
+  double A2s_tab[200]; /* List of values of photorecombination coefficient for 2s state, with Tm=Tr */
+  double A2s_ToB_tab[200]; /* List of values of T_R/B_D that A2s is evaluated at */
   /* END TWIN SECTOR */
     
   struct thermo_vector * ptv;       /**< pointer to vector of integrated quantities and their time-derivatives */
@@ -550,7 +557,16 @@ struct thermo_workspace {
   double RLya_twin_min;
   double dxdt_at_RLya_min;
   double dxdt_max;
+    
+    
+  double Tmat_decoupled_reference_twin;
+  double z_decoupled_reference_twin;
   /* END TWIN SECTOR */
+    
+  /* START #TWIN SECTOR */
+  short nodarkrecomb_twin;  
+    
+  /* END TWIN SECTOR */  
   
   struct thermo_diffeq_workspace * ptdw;        /**< pointer to workspace for differential equations */
   struct thermo_reionization_parameters * ptrp; /**< pointer to workspace for reionization */
@@ -845,7 +861,7 @@ extern "C" {
 #define _m_e_twin (_m_e_*pba->ratio_vev_twin) /** Twin electron mass*/
 #define _epsilon0_perm_ 8.8541878128e-12 /** Vacuum Permittivity*/
 #define _sigma_twin  (_sigma_*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735)/pow(pba->ratio_vev_twin,2)) /**< Twin Thomson cross-section in m^2 */
-#define _Z_REC_MIN_twin 1.0 /* CHECK */
+#define _Z_REC_MIN_twin 0.1 /* CHECK */
 #define _L_H_ion_twin (1.096787737e7*(_mu_twin_/_m_e_)*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735))
 #define _L_He1_ion_twin (1.98310772e7*pba->ratio_vev_twin*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735))
 #define _L_He2_ion_twin (4.389088863e7*pba->ratio_vev_twin*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735))

@@ -119,7 +119,11 @@ class_string_parameter(Fpr_file,"/external/DarkAtomicPhysics/A_cool_wo1s.dat","F
 class_string_parameter(Fpi_file,"/external/DarkAtomicPhysics/B_heat_250.dat","Fpi file")  
 class_string_parameter(ToB_file,"/external/DarkAtomicPhysics/ToB.dat","ToB file")    
 class_string_parameter(TMoTR_file,"/external/DarkAtomicPhysics/TMoTR.dat","TMoTR file")    
+/* Values of recombination coefficient, used for photoionization contribution to plasma opacity */
+class_string_parameter(A2s_file,"/external/DarkAtomicPhysics/A2s_Extended_TMoTR1.dat","A2s file")    
+class_string_parameter(A2s_ToB_file,"/external/DarkAtomicPhysics/A2s_ToB_Extended.dat","A2s ToB file")    
 
+    
 /* END TWIN SECTOR */
     
     
@@ -309,8 +313,9 @@ class_precision_parameter(start_sources_at_tau_c_over_tau_h,double,0.008) /**< s
 
 class_precision_parameter(tight_coupling_approximation,int,(int)compromise_CLASS) /**< method for tight coupling approximation */
 /* TWIN: Changed the idm_dr tight coupling trigger values to be smaller. */
-class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_k,double,0.000)  /**< Original value: 0.01. when to switch off the dark-tight-coupling approximation, first condition (see normal tca for full definition) */
-class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_h,double,0.000) /**< Original value: 0.015. when to switch off the dark-tight-coupling approximation, second condition (see normal tca for full definition) */
+/* Temporarily turn these back on. Make sure to set to 0 if you want to get the power spectrum at high k. */
+class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_k,double,0.0)  /**< Original value: 0.01. when to switch off the dark-tight-coupling approximation, first condition (see normal tca for full definition) */
+class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_h,double,0.0) /**< Original value: 0.015. when to switch off the dark-tight-coupling approximation, second condition (see normal tca for full definition) */
 
 class_precision_parameter(l_max_g,int,12)     /**< number of momenta in Boltzmann hierarchy for photon temperature (scalar), at least 4 */
 class_precision_parameter(l_max_pol_g,int,10) /**< number of momenta in Boltzmann hierarchy for photon polarization (scalar), at least 4 */

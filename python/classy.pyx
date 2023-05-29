@@ -1203,8 +1203,32 @@ cdef class Class:
     def z_rec_twin(self):
         return self.th.z_rec_twin
     
+    def rs_rec_twin(self):
+        return self.th.rs_rec_twin
+    
+    def ds_rec_twin(self):
+        return self.th.ds_rec_twin
+    
+    def ra_rec_twin(self):
+        return self.th.ra_rec_twin
+    
+    def da_rec_twin(self):
+        return self.th.da_rec_twin  
+    
     def tau_rec_twin(self):
         return self.th.tau_rec_twin
+    
+    def tau_d_twin(self):
+        return self.th.tau_d_twin
+    
+    def z_d_twin(self):
+        return self.th.z_d_twin
+    
+    def rs_d_twin(self):
+        return self.th.rs_d_twin
+    
+    def ds_d_twin(self):
+        return self.th.ds_d_twin
     #END TWIN SECTOR 
     def k_eq(self):
         self.compute(["background"])
@@ -1835,8 +1859,24 @@ cdef class Class:
                 value = self.ba.Neff_bbn
             elif name == 'z_rec_twin':
                 value = self.th.z_rec_twin
+            elif name =='rs_rec_twin':
+                value = self.th.rs_rec_twin
+            elif name =='ds_rec_twin':
+                value = self.th.ds_rec_twin
+            elif name =='ra_rec_twin':
+                value = self.th.ra_rec_twin
+            elif name =='da_rec_twin':
+                value = self.th.da_rec_twin
             elif name == 'tau_rec_twin':
                 value = self.th.tau_rec_twin
+            elif name == 'tau_d_twin':
+                value = self.th.tau_d_twin
+            elif name == 'z_d_twin':
+                value = self.th.z_d_twin
+            elif name == 'ds_d_twin':
+                value = self.th.ds_d_twin  
+            elif name == 'rs_d_twin':
+                value = self.th.rs_d_twin
             #END TWIN SECTOR
             elif name == 'Omega_m':
                 value = self.ba.Omega0_m
@@ -1983,6 +2023,8 @@ cdef class Class:
                 value = self.ba.alphafs_dark
             elif name == 'Delta_N_twin':
                 value = self.ba.Delta_N_twin
+            elif name == 'xi_twin':
+                value = self.ba.xi_twin
             #END TWIN SECTOR 
             else:
                 raise CosmoSevereError("%s was not recognized as a derived parameter" % name)

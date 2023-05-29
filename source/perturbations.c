@@ -8917,6 +8917,10 @@ int perturbations_derivs(double tau,
         dy[pv->index_pt_theta_idm_dr] = 1./(1.+Sinv)*(- a_prime_over_a*y[pv->index_pt_theta_idm_dr] + k2*pvecthermo[pth->index_th_cidm_dr2]*
                                                    y[pv->index_pt_delta_idm_dr] + k2*Sinv*(delta_idr/4. - ppw->tca_shear_idm_dr)) + metric_euler + Sinv/(1.+Sinv)*tca_slip_idm_dr;
       }
+      
+    //TWIN FLAG 
+    /*int random_num = rand() % 1000;
+    if (random_num > 995 ){printf("z=%g, k2=%g, delta_idm_dr=%g, theta_idm_dr = %g, deriv_delta_idm_dr = %g, deriv_theta_idm_dr = %g, dmu_idm_dr = %g\n", 1./pvecback[pba->index_bg_a]-1., k2,y[pv->index_pt_delta_idm_dr], y[pv->index_pt_theta_idm_dr],dy[pv->index_pt_delta_idm_dr] ,dy[pv->index_pt_theta_idm_dr] ,dmu_idm_dr );}  */
     }
 
 

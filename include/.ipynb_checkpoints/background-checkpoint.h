@@ -143,6 +143,22 @@ struct background
   double T0_ur_twin;
   double Omega0_g_twin;
   double Omega0_ur_twin;
+    
+  /* Flags for various limits and checks for the twin sector */
+  int flag1_twin;
+  int flag2_twin;
+  int flag3_twin;
+  int flag4_twin;
+  int flag5_twin;
+  int flag6_twin;
+  int flag7_twin;
+  int flag8_twin;
+  int flag9_twin;
+  int flag10_twin;
+  int flag11_twin;
+  int flag12_twin;
+
+   
   /** END TWIN SECTOR */
 
 
