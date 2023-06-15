@@ -57,3 +57,10 @@ thermodynamics_withtwinhelium.c
 tools/.ipynb_checkpoints/arrays-checkpoint.c
 twin_recombination.txt
 adm_test.ini
+.ipynb_checkpoints/adm_minimal-checkpoint.ini
+ETHOS.ini
+source/.ipynb_checkpoints/harmonic-checkpoint.c
+source/.ipynb_checkpoints/lensing-checkpoint.c
+source/.ipynb_checkpoints/transfer-checkpoint.c
+taufs_test_fixed.ini
+taufs_test_unfixed.ini
