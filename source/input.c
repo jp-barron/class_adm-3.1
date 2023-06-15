@@ -2818,25 +2818,34 @@ int input_read_parameters_species(struct file_content * pfc,
   class_call(parser_read_double(pfc,"log10_Delta_N_twin",&param2,&flag2,errmsg),
               errmsg,
               errmsg);
-  class_test((flag1 == _TRUE_) && (flag2 == _TRUE_),
+  class_call(parser_read_double(pfc,"xi_twin",&param3,&flag3,errmsg),
+              errmsg,
+              errmsg);
+  class_test(class_at_least_two_of_three(flag1,flag2,flag3),
              errmsg,
-             "You can only enter one of 'Delta_N_twin' or 'log10_Delta_N_twin'.");    
+             "You can only enter one of 'Delta_N_twin' or 'log10_Delta_N_twin' or 'xi_twin'.");    
         
       if (flag1 == _TRUE_) {
         /*class_test((param1 < 0.001) || (param1 > 1.),
               errmsg,
                "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for Delta_N_twin = %e",param1);*/
         pba->Delta_N_twin = param1;
-        
+        pba->xi_twin = pow((7./8.)*pow(4./11.,4./3.) * pba->Delta_N_twin,1./4.);
       }
       else if (flag2 == _TRUE_) {
         /*class_test((param2 < -3.) || (param2 > 0.),
               errmsg,
                "Twin BBN is only computed for Delta_N_twin = [0.001, 1]. Therefore, Delta_N_twin_gamma must be between 0.001 and 1, you asked for log10_Delta_N_twin = %e",param2);*/
         pba->Delta_N_twin = pow(10,param2);
+        pba->xi_twin = pow((7./8.)*pow(4./11.,4./3.) * pba->Delta_N_twin,1./4.);
       }
+      else if (flag3 == _TRUE_) {
 
-    printf("In input: r=%g,DeltaN=%g,mp=%g,me=%g,alpha=%g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
+        pba->xi_twin = param3;
+        pba->Delta_N_twin = (8/7.)*pow(11./4.,4./3.) * pow(pba->xi_twin,4.);
+      }
+     /* Temp FLAG1 */
+    //printf("In input: r=%g,DeltaN=%g,mp=%g,me=%g,alpha=%g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
 
  /*April 26: We don't need the ratio_vev_twin, but we'll define it as m_e_dark/m_e later so we can still use it in all the places where it's useful. Generalize and remove later 
   class_call(parser_read_double(pfc,"ratio_vev_twin",&param1,&flag1,errmsg),
@@ -2849,13 +2858,6 @@ int input_read_parameters_species(struct file_content * pfc,
         pba->ratio_vev_twin = param1;
       }
 */
-
-    /* Added April 22 for segfault debugging purposes - which parameter points cause segfaults? */
-    /*printf("r_all_twin = %e",pba->r_all_twin);
-    printf("Delta_N_twin = %e",pba->Delta_N_twin);
-    printf("ratio_vev_twin = %e",pba->ratio_vev_twin);*/
-    /*End addition*/
-
 
     /* If any one of the twin parameters is zero, the code completely ignores the twin sector. Changed April 26 to be consistent with new parameters */
     if(((pba->r_all_twin != 0.) || (pba->Delta_N_twin != 0.)||(pba->m_p_dark !=0.)||(pba->m_e_dark !=0.) || (pba->alphafs_dark !=0.)) && (pba->r_all_twin)*(pba->Delta_N_twin)*(pba->m_p_dark)*(pba->m_e_dark)*(pba->alphafs_dark)==0.){
@@ -2886,6 +2888,11 @@ int input_read_parameters_species(struct file_content * pfc,
       }
       pba->Omega0_idr = pba->Omega0_g_twin;
       pba->T_idr = pba->T0_twin;
+        
+    //TWIN FLAG - for testing/debugging purposes. 
+    //if (input_verbose > 1)
+    //printf("START: %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
+  
     };
 
   /** END TWIN SECTOR */
@@ -5306,9 +5313,10 @@ int input_read_parameters_output(struct file_content * pfc,
     class_test(strlen(string1)>_FILENAMESIZE_-32,errmsg,"Root directory name is too long. Please install in other directory, or increase _FILENAMESIZE_ in common.h");
     /** START #TWIN SECTOR */
       // Setting Output file name.
-      if (pba->r_all_twin!=0){
-      sprintf(string1,"output/TwinOut_r%0.3f_v%0.2f_N%0.2f", pba->r_all_twin, pba->ratio_vev_twin, pba->Delta_N_twin);
-      };
+      /* TEMP FLAG1 */
+      //if (pba->r_all_twin!=0){
+      //sprintf(string1,"output/TwinOut_r%0.3f_v%0.2f_N%0.2f", pba->r_all_twin, pba->ratio_vev_twin, pba->Delta_N_twin);
+      //};
       /** END TWIN SECTOR */
     strcpy(pop->root,string1);
   }

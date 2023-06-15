@@ -3146,7 +3146,7 @@ int perturbations_solve(
         mode. If it starts from an approximation switching point,
         redistribute correctly the perturbations from the previous to
         the new vector of perturbations. */
-
+    /* TWIN TEMP FLAG */
     class_call(perturbations_vector_init(ppr,
                                          pba,
                                          pth,
@@ -3168,6 +3168,8 @@ int perturbations_solve(
     else{
       generic_evolver = evolver_ndf15;
     }
+    /* TWIN TEMP FLAG */
+    //printf("k=%g, Perturbations interval limits = %g, %g\n",k,interval_limit[index_interval],interval_limit[index_interval+1]);
 
     class_call(generic_evolver(perturbations_derivs,
                                interval_limit[index_interval],
@@ -6003,7 +6005,7 @@ int perturbations_approximations(
                ppt->error_message);
                
     if (ppw->pvecthermo[pth->index_th_dmu_idm_dr] < 0) {
-        printf("Warning: dmu_idm_dr < 0 and is = %g. Setting to 0.\n",ppw->pvecthermo[pth->index_th_dmu_idm_dr]);
+        //printf("Warning: dmu_idm_dr < 0 and is = %g. Setting to 0.\n",ppw->pvecthermo[pth->index_th_dmu_idm_dr]);
         ppw->pvecthermo[pth->index_th_dmu_idm_dr] = 0.;
     
     }
@@ -6030,7 +6032,7 @@ int perturbations_approximations(
                  1./ppw->pvecback[pba->index_bg_a]-1.,
                  tau,
                  ppw->pvecthermo[pth->index_th_xe],pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
-
+      /* BEGIN #TWIN SECTOR - Print dark sector variables above for debugging purposes */
       /** - ----> (b.2.b) check whether tight-coupling approximation should be on */
 
       if ((tau_c/tau_h < ppr->tight_coupling_trigger_tau_c_over_tau_h) &&
@@ -6044,7 +6046,6 @@ int perturbations_approximations(
     }
 
     if(pba->has_idm_dr == _TRUE_){
-
       if(ppw->pvecthermo[pth->index_th_dmu_idm_dr] == 0.){
         ppw->approx[ppw->index_ap_tca_idm_dr] = (int)tca_idm_dr_off;
       }
@@ -6056,7 +6057,17 @@ int perturbations_approximations(
                    1./ppw->pvecthermo[pth->index_th_dmu_idm_dr],
                    1./ppw->pvecback[pba->index_bg_a]-1.,
                    tau);
-
+        
+        if (pth->rs_d_twin > 40){//Tune this threshold. CHECK. 
+          ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_h = 0.00;
+          ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_k = 0.00;
+        }
+        
+        if (pth->rs_d_twin > 100){//Tune this threshold. CHECK. 
+          ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_h = 0.0;
+          ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_k = 0.0;
+        }
+        
         if ((1./tau_h/ppw->pvecthermo[pth->index_th_dmu_idm_dr] < ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_h) &&
             (1./tau_k/ppw->pvecthermo[pth->index_th_dmu_idm_dr] < ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_k) &&
             (pth->nindex_idm_dr>=2) && (ppt->idr_nature == idr_free_streaming)) {
@@ -8916,6 +8927,10 @@ int perturbations_derivs(double tau,
         dy[pv->index_pt_theta_idm_dr] = 1./(1.+Sinv)*(- a_prime_over_a*y[pv->index_pt_theta_idm_dr] + k2*pvecthermo[pth->index_th_cidm_dr2]*
                                                    y[pv->index_pt_delta_idm_dr] + k2*Sinv*(delta_idr/4. - ppw->tca_shear_idm_dr)) + metric_euler + Sinv/(1.+Sinv)*tca_slip_idm_dr;
       }
+      
+    //TWIN FLAG 
+    /*int random_num = rand() % 1000;
+    if (random_num > 995 ){printf("z=%g, k2=%g, delta_idm_dr=%g, theta_idm_dr = %g, deriv_delta_idm_dr = %g, deriv_theta_idm_dr = %g, dmu_idm_dr = %g\n", 1./pvecback[pba->index_bg_a]-1., k2,y[pv->index_pt_delta_idm_dr], y[pv->index_pt_theta_idm_dr],dy[pv->index_pt_delta_idm_dr] ,dy[pv->index_pt_theta_idm_dr] ,dmu_idm_dr );}  */
     }
 
 

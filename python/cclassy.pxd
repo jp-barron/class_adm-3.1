@@ -74,6 +74,7 @@ cdef extern from "class.h":
         double conformal_age
         double * m_ncdm_in_eV
         double Neff
+        double Neff_bbn
         double Omega0_g
         double Omega0_b
         double Omega0_idr
@@ -105,6 +106,7 @@ cdef extern from "class.h":
         double m_e_dark
         double alphafs_dark
         double Delta_N_twin
+        double xi_twin
 
     cdef struct thermodynamics:
         ErrorMsg error_message
@@ -137,6 +139,14 @@ cdef extern from "class.h":
         double m_idm
         double z_rec_twin
         double tau_rec_twin
+        double rs_rec_twin
+        double ds_rec_twin
+        double ra_rec_twin
+        double da_rec_twin
+        double tau_d_twin
+        double z_d_twin
+        double ds_d_twin
+        double rs_d_twin
         
         int tt_size
 

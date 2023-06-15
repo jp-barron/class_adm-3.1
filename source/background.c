@@ -574,18 +574,25 @@ int background_functions(
 
   /** START #TWIN SECTOR */
   if (pba->has_twin == _TRUE_) {
-    /* TWIN  photons */
-    pvecback[pba->index_bg_rho_g_twin] = pba->Omega0_g_twin * pow(pba->H0,2) / pow(a,4);
+    double Trad_twin;
+    double ye;
+    ye = (pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_)/(pba->T0_twin/a); /* 0-th order estimate of m_e/T at scale factor a. */
+    /* Approximate dark radiation temperature, accounting for possibility of relativistic dark electrons. Uses 0th order T=T0(1+z) to find g*(T(a)), and fit for g*(T) instead of full integral. Approx 5% error in g* during dark e+e- annihilation, accurate before and after */
+    Trad_twin = (pba->T0_twin/a) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
+    
+    /* TWIN  photons and relativistic contribution from twin electrons */
+    pvecback[pba->index_bg_rho_g_twin] = pba->Omega0_g_twin * pow(pba->H0,2) * (1./2.)*(2 + (7./2.)*pow(1 + pow((pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_)/Trad_twin,1.394),0.247) * exp(-0.277 * pow((pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_)/Trad_twin,1.384))) * pow(Trad_twin/pba->T0_twin,4); /*/ pow(a,4); Replace scaling with a, by scaling with temperature, and correct T scaling with a. Use full, correct g*(T) instead of g*=2. */
+    /*printf("scale factor: %g, Correct Tdark: %g, naive Tdark: %g, ye: %g, rho_g_twin with corrections: %g, without: %g\n",a, Trad_twin, pba->T0_twin/a,ye, pvecback[pba->index_bg_rho_g_twin],pba->Omega0_g_twin * pow(pba->H0,2) / pow(a,4));*/
     rho_tot += pvecback[pba->index_bg_rho_g_twin];
     p_tot += (1./3.) * pvecback[pba->index_bg_rho_g_twin];
     rho_r += pvecback[pba->index_bg_rho_g_twin];
-
+      
     /* TWIN  relativistic neutrinos  */
-    pvecback[pba->index_bg_rho_ur_twin] = pba->Omega0_ur_twin * pow(pba->H0,2) / pow(a,4);
+    pvecback[pba->index_bg_rho_ur_twin] = pba->Omega0_ur_twin * pow(pba->H0,2) * pow(Trad_twin/pba->T0_twin,4);/* / pow(a,4);*/
     // Twin neutrinos have already been added to Omega_ur
    
     /* TWIN baryons */
-    pvecback[pba->index_bg_rho_b_twin] = pba->Omega0_b_twin * pow(pba->H0,2) / pow(a,3);
+    pvecback[pba->index_bg_rho_b_twin] = pba->Omega0_b_twin * pow(pba->H0,2) * pow(Trad_twin/pba->T0_twin,3); /*/ pow(a,3);*/
     rho_tot += pvecback[pba->index_bg_rho_b_twin];
     p_tot += 0;
     rho_m += pvecback[pba->index_bg_rho_b_twin];
@@ -2247,6 +2254,7 @@ int background_initial_conditions(
        This could happen for some WDM models.
   */
 
+
   if (pba->has_ncdm == _TRUE_) {
 
     for (counter=0; counter < _MAX_IT_; counter++) {
@@ -2285,6 +2293,18 @@ int background_initial_conditions(
                pba->error_message,
                "Search for initial scale factor a such that all ncdm species are relativistic failed.");
   }
+
+  /* If we have aDM species, we might need to start earlier than the standard value if recombination is super duper early. */
+  /** START #TWIN SECTOR **/
+  if (pba->has_twin == _TRUE_){
+    //Find redshift where dark temperature is 10x binding energy, see if it's greater than the standard starting redshift. If it is, set initial redshift to that value. 
+    if (10 * (pba->alphafs_dark * pba->alphafs_dark * pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_ / 2)/(pba->T0_twin) > 1./ppr->a_ini_over_a_today_default){
+      printf("Dark hydrogen binding energy is so high that the table of background values needs to be extended to higher initial z.\n");
+      a = (pba->T0_twin)/(10 * (pba->alphafs_dark * pba->alphafs_dark * pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_ / 2));
+    }
+  }
+  
+  /** END TWIN SECTOR **/
 
   /* Set initial values of {B} variables: */
   Omega_rad = pba->Omega0_g;

@@ -99,7 +99,7 @@ int evolver_ndf15(
   double **dif;
   struct jacobian jac;
   struct numjac_workspace nj_ws;
-
+ 
   /* Method variables: */
   double t,t0,tfinal,tnew=0;
   double rh,htspan,absh,hmin,hmax,h,tdel;
@@ -323,6 +323,7 @@ int evolver_ndf15(
       h = tfinal - t;
       absh = fabs(h);
       done = _TRUE_;
+      //printf("Step is close to tfinal\n");
     }
     if (((fabs(absh-abshlast)/absh)>1e-6)||(k!=klast)){
       adjust_stepsize(dif,(absh/abshlast),neq,k);
@@ -349,6 +350,7 @@ int evolver_ndf15(
         /* Predict a solution at t+h. */
         tnew = t + h;
         if (done==_TRUE_){
+          //printf("In ndf15, done\n");
           tnew = tfinal; /*Hit end point exactly. */
         }
         h = tnew - t;          /* Purify h. */
@@ -379,6 +381,8 @@ int evolver_ndf15(
           for (ii=1;ii<=neq;ii++){
             tempvec1[ii]=(psi[ii]+difkp1[ii]);
           }
+          /* Temp flag1 */
+          //if (tnew > -0.01){printf("In ndf15, -z = %g < 0.01\n",tnew);}
           class_call((*derivs)(tnew,ynew+1,f0+1,parameters_and_workspace_for_derivs,error_message),
                  error_message,error_message);
           stepstat[2] += 1;
@@ -452,6 +456,7 @@ int evolver_ndf15(
           stepstat[1] += 1;
           /*    ! Speed up the iteration by forming new linearization or reducing h. */
           if (Jcurrent==_FALSE_){
+            //printf("hi?\n");
             class_call((*derivs)(t,y+1,f0+1,parameters_and_workspace_for_derivs,error_message),
                        error_message,error_message);
             nfenj=0;
@@ -472,6 +477,7 @@ int evolver_ndf15(
             absh = MAX(0.3 * absh, hmin);
             h = tdir * absh;
             done = _FALSE_;
+            //printf("Now done is false \n");
             adjust_stepsize(dif,(absh/abshlast),neq,k);
             hinvGak = h * invGa[k-1];
             nconhk = 0;
@@ -521,6 +527,7 @@ int evolver_ndf15(
         }
         h = tdir * absh;
         if (absh < abshlast){
+          //printf("Now done is false because absh < abshlast. What does that mean? \n");
           done = _FALSE_;
         }
         adjust_stepsize(dif,(absh/abshlast),neq,k);
@@ -576,6 +583,7 @@ int evolver_ndf15(
     }
     /** End of output **/
     if (done==_TRUE_) {
+      //printf("done is true, breaking loop\n");
       break;
     }
     klast = k;
@@ -637,6 +645,11 @@ int evolver_ndf15(
     t = tnew;
     eqvec(ynew,y,neq);
     Jcurrent = _FALSE_;
+  /* TWIN: Added by Jared Barron */ 
+  //printf("tnew= %g, ynew[1] is %g\n",tnew,ynew[1]);
+  //TEMP FLAG
+  //if (isnan(ynew[1]) || isnan(f0[0])){printf("There's a NaN!\n");}
+  //if (ynew[1] < 0){printf("delta Tmat is %g < 0 at z = %g\n",ynew[1],tnew);}
 
 // MODIFICATION BY LUC
     if (print_variables!=NULL){
@@ -646,7 +659,6 @@ int evolver_ndf15(
                      parameters_and_workspace_for_derivs,error_message),
                  error_message,
                  error_message);
-
         class_call((*print_variables)(tnew,ynew+1,f0+1,
                     parameters_and_workspace_for_derivs,error_message),
                     error_message,error_message);
@@ -664,7 +676,6 @@ int evolver_ndf15(
                    parameters_and_workspace_for_derivs,error_message),
              error_message,
              error_message);
-
   if (print_variables!=NULL){
     /** If we are printing variables, we must store the final point */
     class_call((*print_variables)(tnew,ynew+1,f0+1,

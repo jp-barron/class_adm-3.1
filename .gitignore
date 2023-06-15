@@ -59,6 +59,8 @@ twin_recombination.txt
 adm_test.ini
 .ipynb_checkpoints/adm_minimal-checkpoint.ini
 ETHOS.ini
+adm_highk_test_nindex4.ini
+adm_highk_test_nindex6.ini
 source/.ipynb_checkpoints/harmonic-checkpoint.c
 source/.ipynb_checkpoints/lensing-checkpoint.c
 source/.ipynb_checkpoints/transfer-checkpoint.c

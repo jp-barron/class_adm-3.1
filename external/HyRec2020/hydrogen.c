@@ -86,20 +86,23 @@ December 2014:
 ***************************************************************************************************/
 
 double rec_TLA_dxHIIdlna(REC_COSMOPARAMS *cosmo, double xe, double xHII, double nH, double H, double TM, double TR, double Fudge) {
-
+  
   double RLya, alphaB_TM, alphaB_TR, four_betaB, C, s, Dxe2, DalphaB;
   double fsR = cosmo->fsR, meR = cosmo->meR;
 
   rescale_T(&TM, fsR, meR);
   rescale_T(&TR, fsR, meR);
+  //Need to regulate divergence when xHII = 1.
+  /* BEGIN #TWIN SECTOR */
+  double RLya_num, RLya_denom;
+  RLya_num =LYA_FACT(fsR, meR) * H / nH;
+  RLya_denom = (1.-xHII);
 
-  RLya       = LYA_FACT(fsR, meR) * H / nH / (1.-xHII);
   alphaB_TM  = Fudge * alphaB_PPB(TM, fsR, meR);
   alphaB_TR  = Fudge * alphaB_PPB(TR, fsR, meR);
 
   four_betaB = SAHA_FACT(fsR, meR) *TR*sqrt(TR) *exp(-0.25*EI/TR) * alphaB_TR;
-  C          = (3.*RLya + L2s_rescaled(fsR, meR))/(3.*RLya + L2s_rescaled(fsR, meR) + four_betaB);    /* Peebles' C-factor */
-
+  C          = (3.*RLya_num + L2s_rescaled(fsR, meR)*RLya_denom)/(3.*RLya_num + (L2s_rescaled(fsR, meR) + four_betaB)*RLya_denom);    /* Peebles' C-factor */
   s          = SAHA_FACT(fsR, meR) *TR*sqrt(TR) *exp(-EI/TR)/nH;
   Dxe2       = xe*xHII - s*(1.-xHII);    /* xe xp - xe xp[Saha eq with 1s] -- gives more compact expressions */
   DalphaB    = alphaB_TM - alphaB_TR;
@@ -110,6 +113,9 @@ double rec_TLA_dxHIIdlna(REC_COSMOPARAMS *cosmo, double xe, double xHII, double 
       printf("Derivative of ionization fraction computed with Peebles is <0. Matter temperature is %g, radiation temprature is %g",TM,TR);
   }*/
   //printf("RLya in Hyrec is %g\n",RLya);
+    /* TEMP FLAG 2 */
+  //printf("RLya is %g, L2s_rescaled is %g, four_betaB is %g\n",RLya,L2s_rescaled(fsR,meR),four_betaB);
+  //printf("C is %g, s is %g, alphaB_TM is %g, alphaB_TR is %g, xe is %g, xHII is %G, Dxe2 is %g, DalpahB is %g, First term is %g, second term is %g\n",C,s,alphaB_TM,xe,xHII,Dxe2,DalphaB,s*(1.-xHII)*DalphaB, Dxe2*alphaB_TM);
   return -nH*(s*(1.-xHII)*DalphaB + Dxe2*alphaB_TM)*C/H + (cosmo->inj_params->ion + (1.-C)*cosmo->inj_params->exclya)/H;
   
 
@@ -359,7 +365,7 @@ void interpolate_rates(double Alpha[2], double DAlpha[2], double Beta[2], double
   if (TM_TR > 1.) {
     T_RATIO = 1./TM_TR; i = 2;
     /* BEGIN #TWIN SECTOR */
-    printf("Warning: Tm > Tr, but this shouldn't happen for twin sector. Recombination coefficients are meaningless.");
+    //printf("Warning: Tm > Tr, but this shouldn't happen for twin sector. Recombination coefficients are meaningless.");
     /* END TWIN SECTOR */
   }
   else {
@@ -546,10 +552,7 @@ double rec_HMLA_dxHIIdlna(HYREC_DATA *data, double xe, double xHII, double nH, d
 
   s    = SAHA_FACT(fsR, meR) *TR*sqrt(TR) *exp(-EI/TR)/nH;
   Dxe2 = xe*xHII - s*(1.-xHII); /* xe^2 - xe^2[Saha eq with 1s] -- gives more compact expressions */
-
-  //x2s = (nH*xe*xe*Alpha[0]-(1.-xe)*exp(-0.75*EI/TR)*Beta[0])/(Gamma_2s - R2s2p*R2p2s/Gamma_2p) + (R2p2s/Gamma_2s)*(nH*xe*xe*Alpha[1]-3*(1.-xe)*exp(-0.75*EI/TR)*Beta[1])/(Gamma_2p-R2p2s*R2s2p/Gamma_2s) ; 
-    
-    
+        
   return -nH/H *( (s*(1.-xHII)*DAlpha[0] + Alpha[0]*Dxe2)*C2s + (s*(1.-xHII)*DAlpha[1] + Alpha[1]*Dxe2)*C2p )
          + (cosmo->inj_params->ion + (0.25*(1.-C2s) + 0.75*(1.-C2p))*cosmo->inj_params->exclya)/H ;
 
@@ -580,12 +583,11 @@ double rec_HMLA_x2s(HYREC_DATA *data, double xe, double xHII, double nH, double 
     return 0.;
   }
 
-  RLya = LYA_FACT(fsR, meR) *H/nH/(1.-xHII);   /* 8 PI H/(3 nH x1s lambda_Lya^3) */
+  RLya = LYA_FACT(fsR, meR) *H/nH/(1.-xHII);   /* 8 PI H/(3 nH x1s lambda_Lya^3) */  
 
   /* Effective inverse lifetimes of 2s and 2p states */
   Gamma_2s = Beta[0] + 3.*R2p2s + L2s_rescaled(fsR, meR);
   Gamma_2p = Beta[1] + R2p2s + RLya;
-
   return (nH*xe*xe*Alpha[0]-(1.-xe)*exp(-0.75*EI/TR)*Beta[0])/(Gamma_2s - 3*R2p2s*R2p2s/Gamma_2p) + (R2p2s/Gamma_2s)*(nH*xe*xe*Alpha[1]-3*(1.-xe)*exp(-0.75*EI/TR)*Beta[1])/(Gamma_2p-3*R2p2s*R2p2s/Gamma_2s) + (1-xe)*exp(-0.75*EI/TR);
 
 }
