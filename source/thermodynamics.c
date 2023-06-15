@@ -2671,6 +2671,7 @@ int thermodynamics_output_summary(
     printf("    and sound horizon angle 100*theta_s = %f\n",100.*pth->rs_rec_twin/pth->ra_rec_twin);
     printf(" -> TWIN free-streaming approximation can be turned on as soon as tau=%g Mpc (z = %g)\n",
            pth->tau_free_streaming_twin, pth->z_table[pth->index_tau_twin]);
+    printf("Twin decoupling sound horizon rs_d_twin = %g Mpc\n",pth->rs_d_twin);
   }
   /** END TWIN SECTOR */
 
@@ -5777,7 +5778,8 @@ int thermodynamics_calculate_drag_quantities(
              pth->error_message);
 
   pth->rs_d_twin=pvecback[pba->index_bg_rs_twin];
-  pth->ds_d_twin=pth->rs_d_twin/(1.+pth->z_d_twin);    
+  pth->ds_d_twin=pth->rs_d_twin/(1.+pth->z_d_twin); 
+  //printf("rdao: %g\n",pth->rs_d_twin);
   /* END TWIN SECTOR */
 
   return _SUCCESS_;

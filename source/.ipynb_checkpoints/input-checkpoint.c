@@ -2890,6 +2890,7 @@ int input_read_parameters_species(struct file_content * pfc,
       pba->T_idr = pba->T0_twin;
         
     //TWIN FLAG - for testing/debugging purposes. 
+    //if (input_verbose > 1)
     //printf("START: %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark);
   
     };

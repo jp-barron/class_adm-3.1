@@ -314,8 +314,8 @@ class_precision_parameter(start_sources_at_tau_c_over_tau_h,double,0.008) /**< s
 class_precision_parameter(tight_coupling_approximation,int,(int)compromise_CLASS) /**< method for tight coupling approximation */
 /* TWIN: Changed the idm_dr tight coupling trigger values to be smaller. */
 /* Temporarily turn these back on. Make sure to set to 0 if you want to get the power spectrum at high k. */
-class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_k,double,0.0)  /**< Original value: 0.01. when to switch off the dark-tight-coupling approximation, first condition (see normal tca for full definition) */
-class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_h,double,0.0) /**< Original value: 0.015. when to switch off the dark-tight-coupling approximation, second condition (see normal tca for full definition) */
+class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_k,double,0.01)  /**< Original value: 0.01. when to switch off the dark-tight-coupling approximation, first condition (see normal tca for full definition) */
+class_precision_parameter(idm_dr_tight_coupling_trigger_tau_c_over_tau_h,double,0.015) /**< Original value: 0.015. when to switch off the dark-tight-coupling approximation, second condition (see normal tca for full definition) */
 
 class_precision_parameter(l_max_g,int,12)     /**< number of momenta in Boltzmann hierarchy for photon temperature (scalar), at least 4 */
 class_precision_parameter(l_max_pol_g,int,10) /**< number of momenta in Boltzmann hierarchy for photon polarization (scalar), at least 4 */

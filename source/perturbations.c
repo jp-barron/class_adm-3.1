@@ -6057,7 +6057,17 @@ int perturbations_approximations(
                    1./ppw->pvecthermo[pth->index_th_dmu_idm_dr],
                    1./ppw->pvecback[pba->index_bg_a]-1.,
                    tau);
-
+        
+        if (pth->rs_d_twin > 40){//Tune this threshold. CHECK. 
+          ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_h = 0.00;
+          ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_k = 0.00;
+        }
+        
+        if (pth->rs_d_twin > 100){//Tune this threshold. CHECK. 
+          ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_h = 0.0;
+          ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_k = 0.0;
+        }
+        
         if ((1./tau_h/ppw->pvecthermo[pth->index_th_dmu_idm_dr] < ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_h) &&
             (1./tau_k/ppw->pvecthermo[pth->index_th_dmu_idm_dr] < ppr->idm_dr_tight_coupling_trigger_tau_c_over_tau_k) &&
             (pth->nindex_idm_dr>=2) && (ppt->idr_nature == idr_free_streaming)) {
