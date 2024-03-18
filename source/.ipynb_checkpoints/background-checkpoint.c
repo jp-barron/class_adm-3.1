@@ -1946,6 +1946,7 @@ int background_checks(
       printf(" -> Omega0_g_twin = %g \n",pba->Omega0_g_twin);
       printf(" -> Omega0_idr = %g \n",pba->Omega0_idr);
       printf(" -> Omega0_ur_twin = %g \n",pba->Omega0_ur_twin);
+      printf(" -> Omega0_cdm = %g \n",pba->Omega0_cdm);
       printf(" -> T0_twin = %g K\n",pba->T0_twin);
       printf(" -> T0_ur_twin = %g K\n",pba->T0_ur_twin);
     }

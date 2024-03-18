@@ -2875,7 +2875,7 @@ int input_read_parameters_species(struct file_content * pfc,
       pba->T0_ur_twin = 0; /*Old, general adm doesn't have neutrinos: pow(4./11.,1./3.)*pba->T0_twin*/
       pba->Omega0_g_twin = pow(pba->T0_twin/pba->T_cmb,4.)*pba->Omega0_g;
       pba->Omega0_ur_twin = 0; /* Old, general adm doesn't have neutrinos: *7./8.*3*pow(pba->T0_ur_twin/pba->T_cmb,4.)*pba->Omega0_g */
-      pba->Omega0_b_twin = pba->r_all_twin*pba->Omega0_cdm-pba->Omega0_g_twin-pba->Omega0_ur_twin;
+      pba->Omega0_b_twin = pba->r_all_twin*pba->Omega0_cdm;//Commented out February 1 2024: -pba->Omega0_g_twin-pba->Omega0_ur_twin;Justification - the dark radiation is not part of the dark matter. Omega0_cdm here is standing in as "total dark matter energy density", which corresponds to the dark baryons. The dark radiation is added on top. 
       /*April 28: added definition of ratio_vev_twin in terms of pba->m_e_dark and m_e, in GeV.*/
       pba->ratio_vev_twin = pba->m_e_dark/5.109988869e-4;
       pba->Omega0_ur += pba->Omega0_ur_twin;
@@ -2959,7 +2959,7 @@ int input_read_parameters_species(struct file_content * pfc,
 
     class_test(pba->Omega0_idr == 0.0,
                errmsg,
-               "You have requested interacting DM ith DR, this requires a non-zero density of interacting DR. Please set either N_idr or xi_idr");
+               "You have requested interacting DM with DR, this requires a non-zero density of interacting DR. Please set either N_idr or xi_idr");
     /** 7.2.d) */
     class_read_double_one_of_two("m_idm","m_dm",pth->m_idm_dr);
 
