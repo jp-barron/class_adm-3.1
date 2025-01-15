@@ -6075,7 +6075,6 @@ int perturbations_approximations(
         }
         else{
           ppw->approx[ppw->index_ap_tca_idm_dr] = (int)tca_idm_dr_off;
-          //printf("tca_idm_dr_off = %d\n",tau);
         }
       }
     }

@@ -2494,7 +2494,7 @@ int thermodynamics_solve(
   free(mz_output);
 
     //Flags in order: Early decoupling, normal decoupling, late decoupling, incomplete recombination, NO recombination, non-thermal dark radiation, collisional processes important for recombination, case a recombination, bound-free dominate thermal decoupling, rayleigh dominates thermal decoupling, steady-state approximation for x2dot is invalid, Tmat_twin goes negative and is set to 1e-5 K
-  //printf("Flags: %d %d %d %d %d %d %d %d %d %d %d %d\n",pba->flag1_twin,pba->flag2_twin,pba->flag3_twin,pba->flag4_twin,pba->flag5_twin,pba->flag6_twin,pba->flag7_twin,pba->flag8_twin,pba->flag9_twin,pba->flag10_twin,pba->flag11_twin,pba->flag12_twin);
+  printf("Flags: %d %d %d %d %d %d %d %d %d %d %d %d\n",pba->flag1_twin,pba->flag2_twin,pba->flag3_twin,pba->flag4_twin,pba->flag5_twin,pba->flag6_twin,pba->flag7_twin,pba->flag8_twin,pba->flag9_twin,pba->flag10_twin,pba->flag11_twin,pba->flag12_twin);
 
 
   return _SUCCESS_;

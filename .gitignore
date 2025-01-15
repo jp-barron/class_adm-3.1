@@ -66,3 +66,16 @@ source/.ipynb_checkpoints/lensing-checkpoint.c
 source/.ipynb_checkpoints/transfer-checkpoint.c
 taufs_test_fixed.ini
 taufs_test_unfixed.ini
+adm_highk_test.ini
+adm_simpoints_kpeaksearch.ini
+adm_zeus21.ini
+ethos_idmdr.ini
+external/RecfastCLASS/.ipynb_checkpoints/wrap_recfast-checkpoint.c
+include/.ipynb_checkpoints/fourier-checkpoint.h
+include/.ipynb_checkpoints/parser-checkpoint.h
+include/.ipynb_checkpoints/primordial-checkpoint.h
+include/.ipynb_checkpoints/transfer-checkpoint.h
+python/build/
+python/classy.egg-info/
+python/dist/
+zeustest_00_pk.dat
