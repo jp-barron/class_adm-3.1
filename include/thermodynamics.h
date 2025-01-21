@@ -861,7 +861,7 @@ extern "C" {
 #define _m_e_twin (pba->m_e_dark*_GeV_over_kg_) /** GREG CHECKChanged Jan 15 2025 (_m_e_*pba->ratio_vev_twin)**/ /** Twin electron mass*/
 #define _m_p_twin (pba->m_p_dark*_GeV_over_kg_) /** GREG CHECK Added Jan 17 2025 **/
 #define _epsilon0_perm_ 8.8541878128e-12 /** Vacuum Permittivity*/
-#define _sigma_twin  (_sigma_*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735)*(1.0/pow(_m_e_twin/_m_e_,2) + 1.0/pow(pba->m_p_dark*_GeV_over_kg/_m_e_,2))  /** pow(pba->ratio_vev_twin,2)) GREG CHECK Changed Jan 15 2025 to include both electron and proton scattering. Could also use reduced mass here, it's equivalent.**//**< Twin Thomson cross-section in m^2 */
+#define _sigma_twin  (_sigma_*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735)*(1.0/pow(_m_e_twin/_m_e_,2) + 1.0/pow(_m_p_twin/_m_e_,2)))  /** pow(pba->ratio_vev_twin,2)) GREG CHECK Changed Jan 15 2025 to include both electron and proton scattering. Could also use reduced mass here, it's equivalent.**//**< Twin Thomson cross-section in m^2 */
 #define _Z_REC_MIN_twin 0.1 /* CHECK */
 #define _L_H_ion_twin (1.096787737e7*(_mu_twin_/_m_e_)*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735))
 #define _L_He1_ion_twin (1.98310772e7*(_mu_twin_/_m_e_)*(pba->alphafs_dark/0.00729735)*(pba->alphafs_dark/0.00729735)) /**Changed Jan 15 2025 as well to use reduced mass. **/

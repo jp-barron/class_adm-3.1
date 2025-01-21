@@ -578,7 +578,7 @@ int background_functions(
     double ye;
     /** GREG CHECK Note Jan 15 2025: What if the dark proton is also very light? e.g. positronium-like. We should take its annihilation into account here as well, then. Just duplicate these lines of code? Either way, the use of electron mass here is correct, I think.**/
     ye = (pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_)/(pba->T0_twin/a); /* 0-th order estimate of m_e/T at scale factor a. */
-    /** Tentative: yp = (pba->m_p_dark * pow(10.0,9) * _eV_ / _k_B_)/(pba->T0_twin/a); /* 0-th order estimate of m_e/T at scale factor a. */ **/
+    /** Tentative: yp = (pba->m_p_dark * pow(10.0,9) * _eV_ / _k_B_)/(pba->T0_twin/a); /* 0-th order estimate of m_e/T at scale factor a. */ 
 
       
     /* Approximate dark radiation temperature, accounting for possibility of relativistic dark electrons. Uses 0th order T=T0(1+z) to find g*(T(a)), and fit for g*(T) instead of full integral. Approx 5% error in g* during dark e+e- annihilation, accurate before and after */
