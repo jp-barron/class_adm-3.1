@@ -71,10 +71,6 @@ int thermodynamics_at_z(
   /* Varying fundamental constants */
   double sigmaTrescale = 1., alpha = 1., me = 1.;
   
-  /**double H_twin_mass;
-  H_twin_mass =pba->m_e_dark * _GeV_over_kg_ + pba->m_p_dark * _GeV_over_kg_ - 0.5 * pba->m_e_dark * _GeV_over_kg_ * pba->alphafs_dark * pba->alphafs_dark;**/
-
-
   /* The fact that z is in the pre-computed range 0 <= z <= z_initial will be checked in the interpolation routines below. Before
      trying to interpolate, allow the routine to deal with the case z > z_initial: then, all relevant quantities can be extrapolated
      using simple analytic approximations */
@@ -198,7 +194,7 @@ int thermodynamics_at_z(
       pvecthermo[pth->index_th_cb2_twin] = pvecthermo[pth->index_th_wb_twin] * 4. / 3.;
 
       /* Calculate dkappa/dtau (dkappa/dtau = a n_e x_e sigma_T = a^{-2} n_e(today) x_e sigma_T in units of 1/Mpc) - at very early times there's no Rayleigh scattering so this expression is fine.*/
-      pvecthermo[pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * pth->n_e_twin * x0_twin * _sigma_twin * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) * _Mpc_over_m_;
+      pvecthermo[pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * pth->n_e_twin * x0_twin * _sigma_twin * _Mpc_over_m_; /** GREG CHECK * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) *  Changed Jan 17 2025: Removed proton mass correction, since sigma_twin now includes the dark proton by default **/
 
       /* tau_d scales like (1+z)**2 */
       pvecthermo[pth->index_th_tau_d_twin] = pth->thermodynamics_table[(pth->tt_size-1)*pth->th_size+pth->index_th_tau_d_twin]*pow((1+z)/(1.+pth->z_table[pth->tt_size-1]),2);
@@ -830,7 +826,7 @@ int thermodynamics_twin_helium_from_bbn(
      ratio_vev_twin1 deltaN1 YHe_twin
      ratio_vev_twin2 deltaN1 YHe_twin
      .....
-     ratio_vev_twin1 delatN2 YHe_twin
+     ratio_vev_twin1 deltaN2 YHe_twin
      ratio_vev_twin2 deltaN2 YHe_twin
      .....
      */
@@ -1012,7 +1008,8 @@ int thermodynamics_checks(
   /* Some checks on the ADM parameters to accommodate the limitations of the CLASS code, as well as make sure various assumptions about the cosmological history of the dark sector are valid. */
     
   /* Is the redshift where T_dark = B_D < 5? CLASS does some weird stuff here like running forever. Let's just cut it off right away. */
-  class_test(pba->alphafs_dark * pba->alphafs_dark * pba->m_e_dark * 1.0e9 / 2 < pba->T0_twin * .00008617 * 6,pth->error_message,"T_dark=B_D for z<=5. CLASS is badly behaved here.");
+  /* GREG CHECK Change Jan 17 2025 to use reduced mass instead of m_e */
+  class_test(pba->alphafs_dark * pba->alphafs_dark * (pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark)) * 1.0e9 / 2 < pba->T0_twin * .00008617 * 6,pth->error_message,"T_dark=B_D for z<=5. CLASS is badly behaved here.");
   
   return _SUCCESS_;
 }
@@ -1209,7 +1206,10 @@ int thermodynamics_workspace_init(
   /* BEGIN #TWIN SECTOR */
   if (pba->has_twin == _TRUE_) {
     /* Prefactor in non-relativistic number density for temperature -- (2*pi*m_e) and unit conversion */
-  ptw->const_NR_numberdens_twin = 2.*_PI_*(_m_e_twin/_h_P_)*(_k_B_/_h_P_);
+  /* GREG CHECK Change Jan 17 2025: Explicitly include hydrogen and proton mass here, to allow for positronium-like mass ratios. */
+  /*factors of 2pi make sense because we divide by h, not hbar, so we pick up extra factors of 2pi in the numerator to compensate */
+  /*Note that now the combination of masses appearing in this factor is almost the reduced mass, except that mH includes the binding energy, so for large alpha it's not exactly the same */
+  ptw->const_NR_numberdens_twin = 2.*_PI_*(_m_e_twin/_h_P_)*(_m_p_twin/_m_H_twin)*(_k_B_/_h_P_);
   /* Ionization energy for HI -- temperature equivalent in Kelvin */
   ptw->const_Tion_H_twin = _h_P_*_c_*_L_H_ion_twin/_k_B_;
   /* Ionization energy for HeI -- temperature equivalent in Kelvin */
@@ -1307,33 +1307,34 @@ int thermodynamics_workspace_init(
   
   
   
-  
-  if (pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1.5e-16){
+  /* GREG CHECK Changed Jan 20 2025: Replaced electron mass with reduced mass since it's from a binding energy, and replaced proton mass with hydrogen mass */
+  if (pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/((pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark)) * 1.0e6)) * (1.0/(pba->m_p_dark + pba->m_e_dark - 0.5 * pow(pba->alphafs_dark,2)*(pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark)))) < 1.5e-16){
     //Bound taken from 1209.5752, eq. 45
     pba->flag4_twin = 1;
     //printf("Warning: Recombination will likely be highly incomplete. In the intermediate region where there is some, incomplete, recombination, the code may be unreliable. Dark ionization history may be sensitive to z_switch between Saha and Boltzmann. Dark atom criterion is %g \n",pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark));
   }
-  
-  if (200* pow(pba->alphafs_dark,4) * pow(pba->xi_twin, -4) * pow(pba->m_p_dark,-2) * pow(1.0e9 * pba->m_e_dark,-1) > 0.01){
+  /* GREG CHECK Changed Jan 20 2025: Replaced electorn mass with reduced mass, proton mass with hydrogen mass */
+  if (200* pow(pba->alphafs_dark,4) * pow(pba->xi_twin, -4) * pow((pba->m_p_dark + pba->m_e_dark - 0.5 * pow(pba->alphafs_dark,2)*(pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark))),-2) * pow(1.0e9 * (pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark)),-1) > 0.01){
   //This bound taken from 1209.5752, eq. 44. 
   pba->flag6_twin = 1;
   //printf("Warning: Energy injected into dark photon bath due to recombination is not negligible. Dark radiation likely not thermal. delta rho_gamma_D/rho_gamma_D ~ %g.\n",200* pow(pba->alphafs_dark,4) * pow(pba->xi_twin, -4) * pow(pba->m_p_dark,-2) * pow(1.0e9 * pba->m_e_dark,-1));
   }
-  
-  if (pba->alphafs_dark * pow(pba->xi_twin,3) * pba->m_p_dark / pba->r_all_twin < 1e-10){ 
+  /* GREG CHECK Changed Jan 20 2025: Replaced proton mass with hydrogen mass */
+  if (pba->alphafs_dark * pow(pba->xi_twin,3) * (pba->m_p_dark + pba->m_e_dark - 0.5 * pow(pba->alphafs_dark,2)*(pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark))) / pba->r_all_twin < 1e-10){ 
   //This bound taken from 1209.5752, eq. 25
   pba->flag7_twin = 1;
   //printf("Warning: Collisional processses might contribute significantly to dark recombination. Can't trust recombination calculation.\n");
   }
-  
-   if (pow(pba->xi_twin,1.5) * (1/pba->r_all_twin) * pba->m_p_dark * pow(pba->alphafs_dark,-6) * (1/pba->m_e_dark) > 2.47e24){
+   /*GREG CHECK Jan 20 2025: Not sure where the case A/case B criterion comes from, maybe Yacine Ali-Haimoud's thesis? Electron mass should probably be replaced with reduced mass. */
+   if (pow(pba->xi_twin,1.5) * (1/pba->r_all_twin) * pba->m_p_dark * pow(pba->alphafs_dark,-6) * (1/(pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark))) > 2.47e24){
   //This bound estimates whether an ionizing photon travels for one expansion time, on average, before being absorbed.
   //When x1s = 1e-3 or lower.  
   pba->flag8_twin = 1;
   //printf("Warning: Recombination is likely not Case B, may be Case A dominated.\n");
   }
-  
-  if (5.6 * 1.0e5 * pow(pba->alphafs_dark,2) * pow(pba->xi_twin,3) * pow(pba->r_all_twin,-1) * pba->m_p_dark < 1){
+
+  /* GREG CHECK Change Jan 20 2025: Replaced proton mass with hydrogen mass */
+  if (5.6 * 1.0e5 * pow(pba->alphafs_dark,2) * pow(pba->xi_twin,3) * pow(pba->r_all_twin,-1) * (pba->m_p_dark + pba->m_e_dark - 0.5 * pow(pba->alphafs_dark,2)*(pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark))) < 1){
   //Code is valid whether this value is < or > 1, but it's useful to know whether bremsstrahlung, photoheating might be important. 
   //Criterion taken from 1209.5752, eq. 38. 
   pba->flag9_twin = 1;
@@ -1348,7 +1349,7 @@ int thermodynamics_workspace_init(
   //printf("Redshift where Trad_twin = B_D: z = %g\n",c2-1);
   
   
-  //Also calculate the redshift where x would reach 1e-9 in the Saha approximation. Will use this in cases of really late decoupling, where switching to Boltzmann at x=0.999 is too early. 
+  //Also calculate the redshift where x would reach 1e-7 in the Saha approximation. Will use this in cases of really late decoupling, where switching to Boltzmann at x=0.999 is too early. 
   double x_threshold_2, z_threshold_2;
   x_threshold_2 = 1e-7;
   c1 = (x_threshold_2*x_threshold_2/(1-x_threshold_2))*ptw->SIunit_nH0_twin/exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin)); //Technically not right if Tmatter is different from Trad. 
@@ -1359,7 +1360,8 @@ int thermodynamics_workspace_init(
   (Although at this low coupling, other heating processes matter and delay decoupling - but that means we will switch before we need to, which is ok).
   So we're checking when Gamma = sigma_T * n_e_all(z) < 2H(z), solving this for z. We can't definitely say we're going to be in matter vs radiation domination so H is 
   non-trivial to get: H(z) = H0 sqrt(Omega_r(1+z)^4 + Omega_m(1+z)^3). If we assume matter domination it's easier. Does this situation only arise at z<3200?*/
-  z_decoupling_rad = sqrt(sqrt(pba->Omega0_r)*ptw->SIunit_H0/((1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * _Jm3_over_Mpc2_ ) * (0.5)))-1; //Redshift where Thomson scattering rate is equal to Hubble for x_e = 1, assuming radiation domination. 
+  /** Change Jan 17 2025: Commenting out/removing all mentions of z_decoupling_rad, since it's not used. **/
+  /*z_decoupling_rad = sqrt(sqrt(pba->Omega0_r)*ptw->SIunit_H0/((1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * _Jm3_over_Mpc2_ ) * (0.5)))-1;*/ //Redshift where Thomson scattering rate is equal to Hubble for x_e = 1, assuming radiation domination. 
   //If z_threshold_1 is not much more than z_decoupling_rad, it means decoupling can happen before recombination, so we should switch to Boltzmann evolving x_e sooner. 
   //Safety factor of 10? 
   //printf("Compton decoupling threshold z with x_twin=1, assuming radiation domination: %g\n",z_decoupling_rad);
@@ -1380,19 +1382,21 @@ int thermodynamics_workspace_init(
   T_dec_upper = ptw->const_Tion_H_twin;
   T_dec_lower = 0.001 * ptw->const_Tion_H_twin; //Assumed to be a safe lower limit - pre-factor might need to be adjusted. 
   decoupling_tol = 0.001;
-  double compton_mid, hubble_mid;
+  /*double compton_mid, hubble_mid;*/
   double safety_factor;
   safety_factor = 100;
 
   rhs_saha_upper = exp(1.5*log(ptw->const_NR_numberdens_twin*T_dec_upper/(T_dec_upper/ptw->Tnow_twin)/(T_dec_upper/ptw->Tnow_twin)) - ptw->const_Tion_H_twin/T_dec_upper)/ptw->SIunit_nH0_twin;
   x_saha_upper = 2./(1. + sqrt(1 + 4./rhs_saha_upper));//x_e under saha assumption, at T_dec. 
-  compton_hubble_diff_upper = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_upper/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha_upper / (1. + x_saha_upper) -  safety_factor * ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_upper/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_upper/ptw->Tnow_twin,1.5));  
+  /* GREG CHECK Change Jan 20 2025: Changed the below line, which had 1 + (me/mp)^3. There are three factors, two from the compton cross-section, one from dividing by electron mass. Since I changed _sigma_twin to include both protons and electrons, we don't need to account for that factor anymore, so it's just the electron mass. so we'll have just one factor of me/mp out front. */
+  compton_hubble_diff_upper = (1 + (pba->m_e_dark/pba->m_p_dark))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_upper/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha_upper / (1. + x_saha_upper) -  safety_factor * ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_upper/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_upper/ptw->Tnow_twin,1.5));  
 
   while (compton_hubble_diff_upper < 0){
     T_dec_upper = 10* T_dec_upper;
     rhs_saha_upper = exp(1.5*log(ptw->const_NR_numberdens_twin*T_dec_upper/(T_dec_upper/ptw->Tnow_twin)/(T_dec_upper/ptw->Tnow_twin)) - ptw->const_Tion_H_twin/T_dec_upper)/ptw->SIunit_nH0_twin;
     x_saha_upper = 2./(1. + sqrt(1 + 4./rhs_saha_upper));//x_e under saha assumption, at T_dec. 
-    compton_hubble_diff_upper = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_upper/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha_upper / (1. + x_saha_upper) -  safety_factor * ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_upper/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_upper/ptw->Tnow_twin,1.5)); 
+    /* GREG CHECK Change Jan 20 2025: Same change in prefactor as above. */
+    compton_hubble_diff_upper = (1 + (pba->m_e_dark/pba->m_p_dark))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_upper/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha_upper / (1. + x_saha_upper) -  safety_factor * ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_upper/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_upper/ptw->Tnow_twin,1.5)); 
   }
   
   while ((T_dec_upper - T_dec_lower)/T_dec_upper > decoupling_tol) {
@@ -1403,11 +1407,13 @@ int thermodynamics_workspace_init(
   //Compton rate - Hubble at T_dec. Includes radiation and matter terms in hubble. 
   //Multiply hubble by an arbitrary factor to get the 'start' of decoupling - since x_twin goes down more quickly in saha, once decoupling starts and x_twin starts freezing out, the compton/Hubble ratio actually decreases more slowly than the 
   //equilibrium approximation would suggest. 
-  compton_hubble_diff_mid = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_mid/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha / (1. + x_saha) -  safety_factor * ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_mid/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_mid/ptw->Tnow_twin,1.5));   
+  /*GREG CHECK Change Jan 20 2025: Same change in prefactor as above */
+  compton_hubble_diff_mid = (1 + (pba->m_e_dark/pba->m_p_dark))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_mid/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha / (1. + x_saha) -  safety_factor * ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_mid/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_mid/ptw->Tnow_twin,1.5));   
+
+  /** GREG CHECK Change Jan 17 2025: Commenting out/removing compton_mid and hubble_mid, since they were only used for debugging purposes **/
+  /*compton_mid = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_mid/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha / (1. + x_saha);*/
   
-  compton_mid = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pba->Omega0_g_twin * pow(pba->H0,2) * 2 * pow(T_dec_mid/ptw->Tnow_twin,4) * _Jm3_over_Mpc2_ ) * x_saha / (1. + x_saha);
-  
-  hubble_mid = ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_mid/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_mid/ptw->Tnow_twin,1.5)); 
+  /*hubble_mid = ptw->SIunit_H0*(sqrt(pba->Omega0_r)*pow(T_dec_mid/ptw->Tnow_twin,2) + sqrt(pba->Omega0_m)*pow(T_dec_mid/ptw->Tnow_twin,1.5)); */
   
   if (compton_hubble_diff_mid > 0){
     T_dec_upper = T_dec_mid;
@@ -1421,8 +1427,9 @@ int thermodynamics_workspace_init(
   ptw->z_decoupling_estimate = T_dec_mid/ptw->Tnow_twin - 1;
   //printf("z of decoupling, found by bisection with precision %g, is: %g, with x_saha = %g\n",decoupling_tol,ptw->z_decoupling_estimate,x_saha); 
   //printf("T_dec/B_D = %g\n",T_dec_mid/ptw->const_Tion_H_twin);
-  
-  if ((pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark) < 1e-19) || (T_dec_mid/ptw->const_Tion_H_twin > 1)){
+  /* GREG CHECK Change Jan 20 2025: Replace electron mass and proton mass with reduced mass and hydrogen mass, as in eq. 22 from 1209.5752 */
+  if ((pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/((pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark)) * 1.0e6)) * (1.0/(pba->m_p_dark + pba->m_e_dark - 0.5 * pow(pba->alphafs_dark,2)*(pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark)))) < 1e-19) || (T_dec_mid/ptw->const_Tion_H_twin > 1)){
+    //The scalings in this expression are based on eq 22 in 1209.5752
     ptw->nodarkrecomb_twin = 1;
     pba->flag5_twin = 1;
     //printf("Recombination will be so incomplete that we manually set x_e = 1, to avoid code errors when solving the Boltzmann equation for the ionization fraction. Decoupling may be very early. Be cautious using the code in this regime.\n");
@@ -1452,12 +1459,12 @@ int thermodynamics_workspace_init(
   }
   
 
-  ptw->z_H_twin_boltzmann_trigger = z_threshold_choice;//pth->z_threshold_twin;
+  ptw->z_H_twin_boltzmann_trigger = z_threshold_choice;
 
   if (ptw->nodarkrecomb_twin==1){
     ptw->z_H_twin_boltzmann_trigger = 0.0;//Never switch to using Boltzmann equation for dark hydrogen ionization fraction. Manually set x_e_twin = 1.0
   }
-
+  //Some logic setting the initial z for evolving the thermodynamics, to make sure we start early enough, but also don't waste time starting way too early. 
   if (ptw->z_H_twin_boltzmann_trigger > ppr->thermo_z_initial_if_twin){
     ppr->thermo_z_initial = 200 * ptw->z_H_twin_boltzmann_trigger;
     ppr->thermo_z_initial_if_twin = 200 * ptw->z_H_twin_boltzmann_trigger;
@@ -1470,19 +1477,8 @@ int thermodynamics_workspace_init(
   if (ptw->z_H_twin_boltzmann_trigger < 1.0e2){
     ppr->thermo_z_initial_if_twin = 1.0e5;
   }
-  /* Temp FLAG1 */
-  //printf("Redshift where dark sector temperature is approximately m_e_dark: %g\n",(pba->m_e_dark * pow(10.,9) * _eV_ / _k_B_)/(ptw->Tnow_twin) -1);
-  //printf("z          qssrate     compton   freefree   rayleigh   myrate     full\n");
-  if (ppr->thermo_z_initial_if_twin > (pba->m_e_dark * pow(10.,9) * _eV_ / _k_B_)/(ptw->Tnow_twin) -1 ){
-    //printf("Dark sector thermo wants to initialize before dark electrons annihilate. Setting start of dark sector thermo evolution to dark electron mass\n");
-    //ppr->thermo_z_initial_if_twin = (pba->m_e_dark * pow(10.,9) * _eV_ / _k_B_)/(ptw->Tnow_twin) -1;
-    if (ptw->z_H_twin_boltzmann_trigger > ppr->thermo_z_initial_if_twin){
-    //printf("The dark recombination wants to happen at the dark electron mass, that's not good. Check your parameters. \n");
-    }
-  }
-  /* Temp FLAG1 */
-  //printf("Switch to Boltzmann evolution of x_e_twin at z=%g\n",ptw->z_H_twin_boltzmann_trigger);
-  ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_brec_twin] = ptw->z_H_twin_boltzmann_trigger;//ptw->z_H_twin_saha_trigger;//ptw->z_He1_twin_trigger;
+
+  ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_brec_twin] = ptw->z_H_twin_boltzmann_trigger;
   //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He1_twin] = ptw->z_He2_twin_trigger;//ptw->z_He1f_twin_trigger; // First twin He-recombination (HeIII)
   //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He1f_twin] = ptw->z_He2_twin_trigger; // in between 1st and 2nd twin He recombination 
   //ptw->ptdw->ap_z_limits_twin[ptw->ptdw->index_ap_He2_twin] = ptw->z_H_twin_saha_trigger; //  beginning of 2nd twin He-recombination
@@ -2494,7 +2490,7 @@ int thermodynamics_solve(
   free(mz_output);
 
     //Flags in order: Early decoupling, normal decoupling, late decoupling, incomplete recombination, NO recombination, non-thermal dark radiation, collisional processes important for recombination, case a recombination, bound-free dominate thermal decoupling, rayleigh dominates thermal decoupling, steady-state approximation for x2dot is invalid, Tmat_twin goes negative and is set to 1e-5 K
-  printf("Flags: %d %d %d %d %d %d %d %d %d %d %d %d\n",pba->flag1_twin,pba->flag2_twin,pba->flag3_twin,pba->flag4_twin,pba->flag5_twin,pba->flag6_twin,pba->flag7_twin,pba->flag8_twin,pba->flag9_twin,pba->flag10_twin,pba->flag11_twin,pba->flag12_twin);
+  //printf("Flags: %d %d %d %d %d %d %d %d %d %d %d %d\n",pba->flag1_twin,pba->flag2_twin,pba->flag3_twin,pba->flag4_twin,pba->flag5_twin,pba->flag6_twin,pba->flag7_twin,pba->flag8_twin,pba->flag9_twin,pba->flag10_twin,pba->flag11_twin,pba->flag12_twin);
 
 
   return _SUCCESS_;
@@ -3010,6 +3006,7 @@ int thermodynamics_vector_init_twin(
   
   if (ptdw->ap_current_twin == ptdw->index_ap_brec_twin) {
     /* Store Tmat in workspace for later use */
+    /* GREG CHECK Jan 20 2025: This only accounts for electrons, not protons, since it assumed the proton is much heavier. Having a hard time finding where I got this expression from in order to generalize it to allow the proton to also be light. A cosmology textbook? Paper?*/
     ptdw->Tmat_twin = (ptw->Tnow_twin*(1.+z)) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
 
     /* Set the new vector and its indices */
@@ -3933,8 +3930,8 @@ int thermodynamics_derivs_twin(
       }
       //The following checks whether the n=2 to n=1 rates are much faster than the recombination rate, which is a necessary condition for the steady-state assumption that x2dot ~ 0. 
      double RLya_twin, L2s1s_twin,dxdt;
-      RLya_twin = 4.662899067555897e15 * pow(pba->alphafs_dark*pba->alphafs_dark*pba->ratio_vev_twin/.00729735/.00729735,3)*Hz/nH_twin/1e-6/(1.-x_H_twin);
-      L2s1s_twin = 8.22 * pow(pba->alphafs_dark/.00729735,8)*(pba->ratio_vev_twin);
+      RLya_twin = 4.662899067555897e15 * pow(pba->alphafs_dark*pba->alphafs_dark*_mu_twin_/((_m_e_*_m_p_)/(_m_e_+_m_p_))/.00729735/.00729735,3)*Hz/nH_twin/1e-6/(1.-x_H_twin); /** GREG CHECK Changed Jan 15 2025 to remove ratio_vev_twin and replace with reduced masses **/
+      L2s1s_twin = 8.22 * pow(pba->alphafs_dark/.00729735,8)*_mu_twin_/((_m_e_*_m_p_)/(_m_e_+_m_p_)); /**(pba->ratio_vev_twin);GREG CHECK  Changed Jan 15 2025 to replace ratio_vev_twin with reduced masses. **/
       dxdt = -(1+z)*Hz*dy[ptv->index_ti_x_H_twin];
       if (RLya_twin < ptw->RLya_twin_min){
           ptw->RLya_twin_min = RLya_twin;
@@ -4002,8 +3999,8 @@ int thermodynamics_derivs_twin(
   else{
     rate_rayleigh=0.;
   }
-
-  rate_gamma_b_twin = (1 + pow((pba->m_e_dark/pba->m_p_dark),3))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pvecback[pba->index_bg_rho_g_twin] * _Jm3_over_Mpc2_ ) * x_twin / (1.+x_twin+ptw->fHe_twin);
+ /* GREG CHECK Change Jan 20 2025: Replace prefactor (me/mp)^3 with just (me/mp), since the proton contribution to Compton scattering is now included in sigma_twin. Still need one factor of me/mp from that electron mass though. */
+  rate_gamma_b_twin = (1 + (pba->m_e_dark/pba->m_p_dark))*( 2. * _sigma_twin/_m_e_twin/_c_ ) * ( 4./3. * pvecback[pba->index_bg_rho_g_twin] * _Jm3_over_Mpc2_ ) * x_twin / (1.+x_twin+ptw->fHe_twin);
 
   if (pth->has_varconst == _TRUE_) {
     rate_gamma_b_twin *= rescale_rate;
@@ -4415,6 +4412,7 @@ int thermodynamics_sources_twin(
   /* Assign local variables (note that pvecback is filled through derivs) */
   /* Changing evolution of Trad_Twin from just 1/a scaling to include effects of dark electron-positron annihilation. */
   double ye;
+  /* GREG CHECK Jan 20 2025: Should include possibility of light proton as well, in principle. */
   ye = (pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_)/(pba->T0_twin*(1.+z)); /* 0-th order estimate of m_e/T at scale factor a. */
   /* Approximate dark radiation temperature, accounting for possibility of relativistic dark electrons. Uses 0th order T=T0(1+z) to find g*(T(a)), and fit for g*(T) instead of full integral. Approx 5% error in g* during dark e+e- annihilation, accurate before and after */
   Trad_twin = (ptw->Tnow_twin*(1.+z)) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
@@ -4488,10 +4486,14 @@ int thermodynamics_sources_twin(
         
   /* dkappa/dtau_twin = a n_e x_e sigma_T = a^{-2} n_e(today) x_e sigma_T (in units of 1/Mpc) + contribution from Rayleigh scattering at low TD/BD + contribution from photoionization*/
   if (Trad_twin/ptw->const_Tion_H_twin < 0.1){
-    pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * x_twin * _sigma_twin * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) * _Mpc_over_m_ + 32 * pow(_PI_,4) * (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * (1-x_twin) * _sigma_twin * _Mpc_over_m_ * pow(Trad_twin/ptw->const_Tion_H_twin,4)+ (1.+z)*(1.+z) * ptw->SIunit_nH0_twin * ptdw->x_2s_twin * sqrt(_PI_/2.) * exp(-ptw->const_Tion_H_twin/(4.*Trad_twin)) * sqrt(_m_e_) * _m_e_ * pow(pba->alphafs_dark/0.00729735,3) * my_1D_interp(Trad_twin/ptw->const_Tion_H_twin,ptw->ptdw->A2s_ToB_tab,ptw->ptdw->A2s_tab) / (4. * 1.2020569 * Trad_twin * sqrt(Trad_twin)) * pow(10,7.5)/(pow(_GeV_over_kg_,1.5)*(_s_over_Mpc_)*pow(_eV_over_Kelvin_,1.5));
+    /*GREG CHECK Change Jan 20 2025: Remove factor 1 + (me/mp)^2, since sigma_twin now accounts for the proton. * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) */
+      /* GREG CHECK Jan 20 2025: Should the Rayleigh scattering term, which is defined in terms of the thomson cross section, include both the proton and electron? Or effectively, use the reduced mass? In 1209.5752 there's no mention of a correction for the proton, but the source in that paper (ref 152) that computes the rayleigh scattering cross-section in the low energy limit is relative to the Thomson cross-section defined in terms of the bohr radius, which is in turn defined in terms of the electron mass. */
+      /* GREG CHECK Change Jan 20 2025: Changed electron mass to reduced mass in the photoionization contribution, as is consistent with eq 18 of 1209.5752 */
+    pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * x_twin * _sigma_twin * _Mpc_over_m_ + 32 * pow(_PI_,4) * (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * (1-x_twin) * _sigma_twin * _Mpc_over_m_ * pow(Trad_twin/ptw->const_Tion_H_twin,4)+ (1.+z)*(1.+z) * ptw->SIunit_nH0_twin * ptdw->x_2s_twin * sqrt(_PI_/2.) * exp(-ptw->const_Tion_H_twin/(4.*Trad_twin)) * sqrt(_mu_twin_) * _mu_twin_ * pow(pba->alphafs_dark/0.00729735,3) * my_1D_interp(Trad_twin/ptw->const_Tion_H_twin,ptw->ptdw->A2s_ToB_tab,ptw->ptdw->A2s_tab) / (4. * 1.2020569 * Trad_twin * sqrt(Trad_twin)) * pow(10,7.5)/(pow(_GeV_over_kg_,1.5)*(_s_over_Mpc_)*pow(_eV_over_Kelvin_,1.5));
   }
   else{
-    pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * x_twin * _sigma_twin * (1. + pow(pba->m_e_dark/pba->m_p_dark,2)) * _Mpc_over_m_;
+    /* GREG CHECK Change Jan 20 2025: Remove 1 + (me/mp)^2 factor because sigma_twin now accounts for protons. */
+    pth->thermodynamics_table[(pth->tt_size-index_z-1)*pth->th_size+pth->index_th_dkappa_twin] = (1.+z) * (1.+z) * ptw->SIunit_nH0_twin * x_twin * _sigma_twin * _Mpc_over_m_;
 
   }
   
@@ -6022,6 +6024,7 @@ int thermodynamics_ionization_fractions_twin(
 
   /* Set Tmat from the y vector (it is always evolved). */
   double ye;
+  /* GREG CHECK Jan 20 2025: Should in principle include the contribution of dark proton annihilation as well. */
   ye = (pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_)/(pba->T0_twin*(1.+z)); /* 0-th order estimate of m_e/T at scale factor a. */
   Tmat_twin = y[ptv->index_ti_D_Tmat_twin] + (ptw->Tnow_twin*(1.+z)) * pow(2/(2 + (7./2.)*pow(1 + pow(ye,1.394),0.247) * exp(-0.277 * pow(ye,1.384))),1./3.);
 
