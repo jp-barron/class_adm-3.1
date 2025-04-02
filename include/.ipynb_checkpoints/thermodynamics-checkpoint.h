@@ -452,6 +452,7 @@ struct thermo_diffeq_workspace {
   int index_ap_He2_twin;  /**< beginning of 2nd twin He-recombination (HeII) */
   int index_ap_H_twin;    /**< beginning of twin H-recombination (HI) */
   int index_ap_frec_twin; /**< during and after full twin H- and twin HeII-recombination, up to beginning of SM helium recombination */
+  int index_ap_late_twin; /**< during and after full twin H-. TEMP March 24, used for extremely high dark recombination z so that step size isn't too small in ODE solver. **/
     
   int ap_current_twin;     /** current approximation scheme index */
   int ap_size_twin;        /**< number of approximation intervals used during evolver loop */

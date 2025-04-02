@@ -79,3 +79,12 @@ python/build/
 python/classy.egg-info/
 python/dist/
 zeustest_00_pk.dat
+test_oneoff*dat
+test_adm_errors*ini
+.ipynb_checkpoints/class_failures_20250312-checkpoint.pdf
+class_failures_20250312.pdf
+include/.ipynb_checkpoints/dei_rkck-checkpoint.h
+make_pk_plot.py
+pk_test.png
+pk_test_plot.png
+test_adm_tca.ini

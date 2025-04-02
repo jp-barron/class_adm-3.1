@@ -281,11 +281,11 @@ int background_tau_of_z(
   /** - check that \f$ z \f$ is in the pre-computed range */
   class_test(z < pba->z_table[pba->bt_size-1],
              pba->error_message,
-             "out of range: z=%e < z_min=%e\n",z,pba->z_table[pba->bt_size-1]);
+             "out of range: z=%e < z_min=%e \n",z,pba->z_table[pba->bt_size-1]);
 
   class_test(z > pba->z_table[0],
              pba->error_message,
-             "out of range: z=%e > z_max=%e\n",z,pba->z_table[0]);
+             "out of range: z=%.20g > z_max=%.20g\n",z,pba->z_table[0]);
 
   /** - interpolate from pre-computed table with array_interpolate() */
   class_call(array_interpolate_spline(
@@ -2305,8 +2305,9 @@ int background_initial_conditions(
   if (pba->has_twin == _TRUE_){
     //Find redshift where dark temperature is 10x binding energy, see if it's greater than the standard starting redshift. If it is, set initial redshift to that value. 
     if (10 * (pba->alphafs_dark * pba->alphafs_dark * pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_ / 2)/(pba->T0_twin) > 1./ppr->a_ini_over_a_today_default){
-      printf("Dark hydrogen binding energy is so high that the table of background values needs to be extended to higher initial z.\n");
       a = (pba->T0_twin)/(10 * (pba->alphafs_dark * pba->alphafs_dark * pba->m_e_dark * pow(10.0,9) * _eV_ / _k_B_ / 2));
+      printf("Dark hydrogen binding energy is so high that the table of background values needs to be extended to higher initial z. The new z_initial is %g \n",1/a - 1);
+
     }
   }
   

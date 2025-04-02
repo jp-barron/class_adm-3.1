@@ -245,6 +245,8 @@ int evolver_ndf15(
   Jcurrent = _TRUE_; /* True */
 
   hmin = 16.0*eps*MAX(fabs(t),fabs(tfinal));
+  //TEMP march 24
+    //printf("hmin is %g, eps is %g, t_initial is %g \n",hmin,eps,fabs(t));
   /*Calculate initial step */
   rh = 0.0;
 
