@@ -1316,7 +1316,7 @@ int thermodynamics_workspace_init(
     pba->flag4_twin = 1;
     //printf("Warning: Recombination will likely be highly incomplete. In the intermediate region where there is some, incomplete, recombination, the code may be unreliable. Dark ionization history may be sensitive to z_switch between Saha and Boltzmann. Dark atom criterion is %g \n",pba->r_all_twin * (1.0/pba->xi_twin) * pow(pba->alphafs_dark,4) * (1.0/(pba->m_e_dark * 1.0e6)) * (1.0/pba->m_p_dark));
   }
-  /* GREG CHECK Changed Jan 20 2025: Replaced electorn mass with reduced mass, proton mass with hydrogen mass */
+  /* GREG CHECK Changed Jan 20 2025: Replaced electron mass with reduced mass, proton mass with hydrogen mass */
   if (200* pow(pba->alphafs_dark,4) * pow(pba->xi_twin, -4) * pow((pba->m_p_dark + pba->m_e_dark - 0.5 * pow(pba->alphafs_dark,2)*(pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark))),-2) * pow(1.0e9 * (pba->m_e_dark*pba->m_p_dark/(pba->m_e_dark + pba->m_p_dark)),-1) > 0.01){
   //This bound taken from 1209.5752, eq. 44. 
   pba->flag6_twin = 1;
@@ -1444,7 +1444,8 @@ int thermodynamics_workspace_init(
   //Calculate the redshift where x would reach 1e-7 in the Saha approximation. Will use this in cases of really late decoupling, where switching to Boltzmann at x=0.999 is too early. 
   double x_threshold_2, z_threshold_2;
   //TEMP CHANGE March 25: Instead of fixing 1e-7, use 100 * the ionization fraction at the "decoupling z" estimate. 
-  x_threshold_2 = x_saha * 100;
+  //Change april 8: Make this 1000 not 100. 
+  x_threshold_2 = x_saha * 1000;
   c1 = (x_threshold_2*x_threshold_2/(1-x_threshold_2))*ptw->SIunit_nH0_twin/exp(1.5*log(ptw->const_NR_numberdens_twin*ptw->Tnow_twin)); //Technically not right if Tmatter is different from Trad. 
   c2 = ptw->const_Tion_H_twin/ptw->Tnow_twin;
   z_threshold_2 = -2*c2/(3*LambertW1(-0.66667*pow(c1,.66667)*c2,pth));      
@@ -1452,7 +1453,7 @@ int thermodynamics_workspace_init(
   if (ptw->z_decoupling_estimate > z_threshold_1) {//(10 * z_decoupling_rad > z_threshold_1) {
         z_threshold_choice = ptw->z_decoupling_estimate;//10 * z_decoupling_rad;
         pba->flag1_twin = 1;
-        printf("Compton rate falls below %g x Hubble before dark ionization fraction would start falling. Using z_dec = %g as switch for Boltzmann evolution of dark sector.\n",safety_factor, ptw->z_decoupling_estimate);
+        //printf("Compton rate falls below %g x Hubble before dark ionization fraction would start falling. Using z_dec = %g as switch for Boltzmann evolution of dark sector.\n",safety_factor, ptw->z_decoupling_estimate);
         //Decoupling happens before naive Saha equilibrium lets x_e fall below 0.999. 
   }
 
@@ -1461,7 +1462,7 @@ int thermodynamics_workspace_init(
   else if ((ptw->z_decoupling_estimate < 0.01 * z_threshold_1) || x_saha < 1e-8){
     //For ~ very high Thomson cross-section, or more accurately high T_rec/B_D, switching to Boltzmann at x_twin = 0.999 is too early - the ODE is too stiff even for the stiff solver, it seems. 
     //To accommodate this, switch at a lower z, lower x_twin. Since the dark sector stays in equilibrium so late, the Saha equation is an ok approximation in this regime for much longer. Can validate this afterwards within the code by checking compton/hubble actual value at this redshift.  
-    z_threshold_choice = ptw->z_decoupling_estimate;//z_threshold_1;
+    z_threshold_choice = z_threshold_2;//ptw->z_decoupling_estimate;//z_threshold_1;//CHANGE April 8: This was z_decoupling_estimate for some reason, but it should be z_threshold_2, shouldn't it? In the scans where most points were succeeding, was it z_threshold_2 or z_decoupling_estimate? 
     pba->flag3_twin = 1;
     //printf("Compton rate falls below %g x Hubble well after recombination, or at very low x_twin < 1e-9. Using z = %g, where x falls below %g in Saha, as switch for Boltzmann evolution.\n",safety_factor,z_threshold_2,x_threshold_2);
   }
@@ -1472,10 +1473,10 @@ int thermodynamics_workspace_init(
         //Decoupling happens during or after recombination - proceed as normal. 
   }
   
-  //TEMP REMOVE TODO MARCH 25 DEBUG this is a temporary, harcoded value, replace with z_threshold_choice
+  //TEMP REMOVE TODO MARCH 25 DEBUG this is a temporary, hardcoded value, replace with z_threshold_choice
   ptw->z_H_twin_boltzmann_trigger = z_threshold_choice;
    //TEMP REMOVE TODO MARCH 25
-  printf("z boltzmann trigger is %g, z threshold choice is %g, ptw->z_decoupling_estimate is %g,  z_threshold_1 is %g,  z_threshold_2 is %g, x_saha is %g,T_dec_mid is %g\n", ptw->z_H_twin_boltzmann_trigger, z_threshold_choice,ptw->z_decoupling_estimate,z_threshold_1,z_threshold_2,x_saha,T_dec_mid);
+  //printf("z boltzmann trigger is %g, z threshold choice is %g, ptw->z_decoupling_estimate is %g,  z_threshold_1 is %g,  z_threshold_2 is %g, x_saha is %g,T_dec_mid is %g\n", ptw->z_H_twin_boltzmann_trigger, z_threshold_choice,ptw->z_decoupling_estimate,z_threshold_1,z_threshold_2,x_saha,T_dec_mid);
   if (ptw->nodarkrecomb_twin==1){
     ptw->z_H_twin_boltzmann_trigger = 0.0;//Never switch to using Boltzmann equation for dark hydrogen ionization fraction. Manually set x_e_twin = 1.0
   }

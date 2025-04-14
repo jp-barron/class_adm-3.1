@@ -88,3 +88,6 @@ make_pk_plot.py
 pk_test.png
 pk_test_plot.png
 test_adm_tca.ini
+doc/.ipynb_checkpoints/
+execute_tests.sh
+extended_param_tests
