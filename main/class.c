@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     printf("\n\nError in distortions_init \n=>%s\n",sd.error_message);
     return _FAILURE_;
   }
-
+  
   if (output_init(&ba,&th,&pt,&pm,&tr,&hr,&fo,&le,&sd,&op) == _FAILURE_) {
     printf("\n\nError in output_init \n=>%s\n",op.error_message);
     return _FAILURE_;

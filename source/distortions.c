@@ -80,7 +80,6 @@ int distortions_init(struct precision * ppr,
   class_call(distortions_compute_spectral_shapes(ppr,pba,pth,psd),
              psd->error_message,
              psd->error_message);
-
   return _SUCCESS_;
 }
 

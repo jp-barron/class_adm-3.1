@@ -3220,7 +3220,6 @@ int perturbations_solve(
   free(interval_approx);
 
   free(interval_limit);
-
   return _SUCCESS_;
 }
 
