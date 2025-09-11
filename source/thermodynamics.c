@@ -5821,7 +5821,7 @@ int thermodynamics_calculate_drag_quantities(
 
   pth->rs_d_twin=pvecback[pba->index_bg_rs_twin];
   pth->ds_d_twin=pth->rs_d_twin/(1.+pth->z_d_twin); 
-  printf("rdao: %g\n",pth->rs_d_twin);
+  //printf("rdao: %g\n",pth->rs_d_twin);
   /* END TWIN SECTOR */
 
   return _SUCCESS_;
