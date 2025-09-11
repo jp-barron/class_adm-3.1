@@ -398,7 +398,7 @@ int transfer_init(
 #endif
 
   } /* end of parallel region */
-  printf("END of transfer.c: %g %g %g %g %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark,pba->Omega0_cdm+pba->Omega0_b_twin,pba->Omega0_b,pth->tau_reio,pba->h);
+  //printf("END of transfer.c: %g %g %g %g %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark,pba->Omega0_cdm+pba->Omega0_b_twin,pba->Omega0_b,pth->tau_reio,pba->h);
   if (abort == _TRUE_) return _FAILURE_;
 
   /** - finally, free arrays allocated outside parallel zone */

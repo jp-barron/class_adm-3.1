@@ -1581,7 +1581,7 @@ int input_read_parameters(struct file_content * pfc,
                                           errmsg),
              errmsg,
              errmsg);
-  printf("START: %g %g %g %g %g %g %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark,pba->Omega0_cdm+pba->Omega0_b_twin,pba->Omega0_b,ppm->A_s,ppm->n_s,pth->tau_reio,pba->h);
+  //printf("START: %g %g %g %g %g %g %g %g %g %g %g\n",pba->r_all_twin,pba->Delta_N_twin,pba->m_p_dark,pba->m_e_dark,pba->alphafs_dark,pba->Omega0_cdm+pba->Omega0_b_twin,pba->Omega0_b,ppm->A_s,ppm->n_s,pth->tau_reio,pba->h);
   return _SUCCESS_;
 
 }
